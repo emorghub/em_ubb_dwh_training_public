@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "matcher": "Edit|Write|MultiEdit",
+        "bash": "python3 .github/hooks/sql_gate.py",
+        "powershell": "python .github/hooks/sql_gate.py",
+        "timeoutSec": 60
+      }
+    ]
+  }
+}

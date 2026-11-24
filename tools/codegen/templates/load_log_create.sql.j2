@@ -1,0 +1,16 @@
+{% include "_header.sql.j2" %}
+--
+-- The dates {{ package_schema }}.{{ package }}.{{ procedure }} has loaded into
+-- {{ target }}, one row each. A run for a date on or before the latest one listed
+-- here rewinds the history and replays every later listed date, so only that
+-- procedure may write this table. Deploy it once, together with {{ target_table }}.sql.
+
+CREATE TABLE {{ load_log }} (
+    EFFECTIVE_DATE DATE                           NOT NULL,
+    LOADED_AT      TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT {{ pk_log_name }} PRIMARY KEY (EFFECTIVE_DATE)
+);
+
+COMMENT ON TABLE {{ load_log }} IS 'Dates loaded into {{ target }} by {{ package }}.{{ procedure }}; a run for an earlier date replays the later ones.';
+COMMENT ON COLUMN {{ load_log }}.EFFECTIVE_DATE IS 'Effective Date: the {{ effective_param }} a load ran with; the VALID_FROM of the versions it added.';
+COMMENT ON COLUMN {{ load_log }}.LOADED_AT IS 'Loaded At: when this date was last loaded or replayed.';

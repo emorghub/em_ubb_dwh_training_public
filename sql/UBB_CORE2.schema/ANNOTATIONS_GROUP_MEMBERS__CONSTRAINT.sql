@@ -1,0 +1,7 @@
+--------------------------------------------------------
+--  Constraints for Table ANNOTATIONS_GROUP_MEMBERS$
+--------------------------------------------------------
+
+  ALTER TABLE "UBB_CORE2"."ANNOTATIONS_GROUP_MEMBERS$" ADD CONSTRAINT "UNIQUE_GROUP_MEMBER" UNIQUE ("GROUP_ID", "OBJ#", "OBJECT_OWNER", "ANNOTATION_TYPE", "COLUMN_NAME", "FUNCTION_NAME", "PROCEDURE_NAME")
+  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 
+  TABLESPACE "USERS"  ENABLE

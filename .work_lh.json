@@ -1,0 +1,504 @@
+﻿{
+  "mapping": {
+    "Mapping_ID": "M_LOAN_HIST",
+    "Status": "approved",
+    "Owner": "Emil Angelov",
+    "Approved_By": "Emil Angelov",
+    "Approved_On": "2026-11-19",
+    "Source_Ref": "CR-ECB-001 Load_Plan M_LOAN_HIST",
+    "Intent": "REQ-13, REQ-28: gross exposure = outstanding principal + undrawn amount x credit conversion factor must be calculable from CORE data only. This load keeps today's daily CBS loan snapshot of UBB_CORE2.LOAN_HIST unchanged and adds the credit conversion factor (IN-08) delivered by CBS_SIM agreement v1.1.",
+    "Target_Table": "UBB_CORE2.LOAN_HIST",
+    "Table_Description": "Full daily snapshot of the CBS loans: one row per loan and per accepted CBS loan load, with its partner and limit, amounts, dates and the credit conversion factor for the undrawn amount.",
+    "Grain": "One row per loan (LOAN_ID) and load (LOAD_ID): a daily full snapshot, unchanged.",
+    "Business_Key": "LOAN_ID, LOAD_ID",
+    "PLSQL_Proc": "UBB_CORE2.PKG_ETL_LOAN_HIST.LOAD_DAY",
+    "Parameters": "P_BUSINESS_DATE DATE",
+    "Driving_Table": "UBB_STAGING2.STG_LOAN",
+    "Filter": "CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED') AND (STG_LOAN.LIMIT_REF IS NULL OR (LIMIT_HIST.LIMIT_ID IS NOT NULL AND LIMIT_HIST.PARTNER_ID = PARTNER_HIST.PARTNER_ID))",
+    "Group_By": "",
+    "Load_Strategy": "append",
+    "Reload_Predicate": "",
+    "Source_Snapshot": "",
+    "Not_For": "Creating or updating UBB_CORE2.LOAN (LOAN_ID is created elsewhere, see decision D01).\nWriting the job run log (CTRL_JOB_RUN): the calling job does it.\nCalculating gross exposure: that is M_EXPOSURE_HIST.\nDEFAULT_FLAG and any other CBS attribute not asked for by CR-ECB-001.\nReloading CCF into snapshots that were loaded before this change (decision D07).",
+    "Preconditions": "UBB_STAGING2.STG_LOAN has the column CREDIT_CONVERSION_FACTOR (staging change of CR-ECB-001, /dev-1-implement-staging-change) and UBB_CORE2.LOAN_HIST has the column CREDIT_CONVERSION_FACTOR (created by this mapping's change script).\nThe CRM partner load (PKG_ETL_PARTNER.LOAD_DAY) has run, so the partner valid on P_BUSINESS_DATE exists in PARTNER_HIST.\nThe CBS limit load (PKG_ETL_LIMIT.LOAD_DAY) has completed for P_BUSINESS_DATE.\nEvery loan of the load already has a row in UBB_CORE2.LOAN (decision D01).",
+    "Error_Handling": "Every condition below stops the whole run before anything is written (guards AC06 to AC13); no loan is skipped, repaired or defaulted.\nBusiness date missing or not at midnight: stop.\nNot exactly one VALIDATED or COMPLETED CBS_SIM load of LOAN, or of LIMIT, for the date: stop.\nLoan with missing partner reference, currency or amount: stop.\nLoan whose partner is not found exactly once at the date: stop.\nLimit load not completed, or a LIMIT_REF that is missing, ambiguous or belongs to another partner: stop.\nUndrawn amount > 0 and no credit conversion factor, or a factor outside 0 to 1: stop (KPI-04 exceptions, BR-10 principle: no partial snapshot).\nA snapshot of this load already exists: stop (append never overwrites a snapshot).\nNo COMMIT in the load; the caller owns the transaction."
+  },
+  "columns": [
+    {
+      "target_column": "LOAN_ID",
+      "target_type": "NUMBER(18,0)",
+      "nullable": "N",
+      "source_table": "UBB_CORE2.LOAN",
+      "source_column": "LOAN_ID",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Loan ID",
+      "description": "CORE surrogate identifier of the loan.",
+      "notes": "Found through LOAN.SOURCE_SYSTEM = 'CBS_SIM' and LOAN_REF, as in PKG_ETL_LOAN.LOAD_DAY."
+    },
+    {
+      "target_column": "LOAD_ID",
+      "target_type": "NUMBER(18,0)",
+      "nullable": "N",
+      "source_table": "UBB_STAGING2.STG_LOAN",
+      "source_column": "LOAD_ID",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Load ID",
+      "description": "Identifier of the CBS loan load (CTRL_LOAD) the snapshot comes from; it determines the business date.",
+      "notes": "The business date is obtained through CTRL_LOAD (table comment)."
+    },
+    {
+      "target_column": "PARTNER_ID",
+      "target_type": "NUMBER(18,0)",
+      "nullable": "Y",
+      "source_table": "UBB_CORE2.PARTNER_HIST",
+      "source_column": "PARTNER_ID",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Partner ID",
+      "description": "CORE identifier of the borrower: the CRM partner valid on the business date for the loan's CBS partner reference.",
+      "notes": "VALID_FROM <= business date < VALID_TO, [from, to) as in BR-13."
+    },
+    {
+      "target_column": "LIMIT_ID",
+      "target_type": "NUMBER(18,0)",
+      "nullable": "Y",
+      "source_table": "UBB_CORE2.CREDIT_LIMIT",
+      "source_column": "LIMIT_ID",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Limit ID",
+      "description": "CORE identifier of the credit limit the loan is booked under; empty when the loan has no limit.",
+      "notes": "Left join: a loan without LIMIT_REF is kept."
+    },
+    {
+      "target_column": "LOAN_TYPE",
+      "target_type": "VARCHAR2(30 CHAR)",
+      "nullable": "Y",
+      "source_table": "UBB_STAGING2.STG_LOAN",
+      "source_column": "LOAN_TYPE",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Loan type",
+      "description": "Loan classification as delivered by the core banking system.",
+      "notes": ""
+    },
+    {
+      "target_column": "LOAN_STATUS",
+      "target_type": "VARCHAR2(20 CHAR)",
+      "nullable": "Y",
+      "source_table": "UBB_STAGING2.STG_LOAN",
+      "source_column": "LOAN_STATUS",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Loan status",
+      "description": "Status of the loan on the business date, as delivered by the core banking system.",
+      "notes": "All statuses are loaded; the active-status scope of BR-17 is applied by M_EXPOSURE_HIST."
+    },
+    {
+      "target_column": "CURRENCY_CODE",
+      "target_type": "CHAR(3 CHAR)",
+      "nullable": "N",
+      "source_table": "UBB_STAGING2.STG_LOAN",
+      "source_column": "CURRENCY_CODE",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Currency",
+      "description": "ISO currency of the loan amounts.",
+      "notes": "Nullable in staging: guard AC08 stops the run when it is missing."
+    },
+    {
+      "target_column": "PRINCIPAL_AMT",
+      "target_type": "NUMBER(20,2)",
+      "nullable": "N",
+      "source_table": "UBB_STAGING2.STG_LOAN",
+      "source_column": "PRINCIPAL_AMT",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Outstanding principal",
+      "description": "Outstanding principal of the loan in the loan currency. Includes any overdue amount (Q-01 of the requirements).",
+      "notes": "Nullable in staging: guard AC08."
+    },
+    {
+      "target_column": "UNDRAWN_AMT",
+      "target_type": "NUMBER(20,2)",
+      "nullable": "N",
+      "source_table": "UBB_STAGING2.STG_LOAN",
+      "source_column": "UNDRAWN_AMT",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Undrawn amount",
+      "description": "Committed but not yet drawn amount of the loan in the loan currency.",
+      "notes": "Nullable in staging: guard AC08."
+    },
+    {
+      "target_column": "OVERDUE_AMT",
+      "target_type": "NUMBER(20,2)",
+      "nullable": "N",
+      "source_table": "UBB_STAGING2.STG_LOAN",
+      "source_column": "OVERDUE_AMT",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Overdue amount",
+      "description": "Part of the outstanding principal that is overdue, in the loan currency.",
+      "notes": "Nullable in staging: guard AC08."
+    },
+    {
+      "target_column": "INTEREST_RATE",
+      "target_type": "NUMBER(9,6)",
+      "nullable": "Y",
+      "source_table": "UBB_STAGING2.STG_LOAN",
+      "source_column": "INTEREST_RATE",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Interest rate",
+      "description": "Contractual interest rate of the loan.",
+      "notes": ""
+    },
+    {
+      "target_column": "START_DATE",
+      "target_type": "DATE",
+      "nullable": "Y",
+      "source_table": "UBB_STAGING2.STG_LOAN",
+      "source_column": "START_DATE",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Start date",
+      "description": "Date the loan starts.",
+      "notes": ""
+    },
+    {
+      "target_column": "MATURITY_DATE",
+      "target_type": "DATE",
+      "nullable": "Y",
+      "source_table": "UBB_STAGING2.STG_LOAN",
+      "source_column": "MATURITY_DATE",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Maturity date",
+      "description": "Date the loan is due to be repaid.",
+      "notes": ""
+    },
+    {
+      "target_column": "CREDIT_CONVERSION_FACTOR",
+      "target_type": "NUMBER(9,6)",
+      "nullable": "Y",
+      "source_table": "UBB_STAGING2.STG_LOAN",
+      "source_column": "CREDIT_CONVERSION_FACTOR",
+      "transformation_rule": "direct",
+      "scd_type": "0",
+      "business_name": "Credit conversion factor",
+      "description": "Factor, as a fraction between 0 and 1, by which the undrawn amount of the loan is converted into an exposure equivalent. Gross exposure = outstanding principal + undrawn amount x this factor.",
+      "notes": "NEW (IN-08, GC-06, REQ-13, REQ-28). Planned staging column from CBS_SIM agreement v1.1. Empty is allowed only when the undrawn amount is 0 (guard AC12). Snapshots loaded before this change keep it empty (D07)."
+    },
+    {
+      "target_column": "CREATED_AT",
+      "target_type": "TIMESTAMP(6)",
+      "nullable": "N",
+      "source_table": "EXPR",
+      "source_column": "SYSTIMESTAMP",
+      "transformation_rule": "SYSTIMESTAMP",
+      "scd_type": "0",
+      "business_name": "Created at",
+      "description": "Technical timestamp of the moment the row was loaded.",
+      "notes": "The table default; today's load leaves it to the default."
+    }
+  ],
+  "item_columns": [],
+  "joins": [
+    {
+      "table": "UBB_CORE2.CTRL_LOAD",
+      "join_type": "inner",
+      "condition": "CTRL_LOAD.LOAD_ID = STG_LOAN.LOAD_ID",
+      "notes": "Selects the one validated or completed CBS loan load of the business date through Filter (find_source_load). AC06 stops the run unless it is exactly one."
+    },
+    {
+      "table": "UBB_CORE2.LOAN",
+      "join_type": "inner",
+      "condition": "LOAN.SOURCE_SYSTEM = 'CBS_SIM' AND LOAN.LOAN_REF = STG_LOAN.LOAN_REF",
+      "notes": "UQ_LOAN_BK (SOURCE_SYSTEM, LOAN_REF) is unique. Inner: LOAN_ID must exist (D01); AC02 shows a loan that has none."
+    },
+    {
+      "table": "UBB_CORE2.PARTNER_HIST",
+      "join_type": "inner",
+      "condition": "PARTNER_HIST.CBS_PARTNER_REF = STG_LOAN.CBS_PARTNER_REF AND PARTNER_HIST.VALID_FROM <= P_BUSINESS_DATE AND PARTNER_HIST.VALID_TO > P_BUSINESS_DATE",
+      "notes": "CBS_PARTNER_REF is not a declared key, so uniqueness is only guaranteed by guard AC09 (exactly one partner at the date), as in PKG_ETL_LOAN.LOAD_DAY."
+    },
+    {
+      "table": "UBB_CORE2.PARTNER",
+      "join_type": "inner",
+      "condition": "PARTNER.PARTNER_ID = PARTNER_HIST.PARTNER_ID AND PARTNER.SOURCE_SYSTEM = 'CRM_SIM'",
+      "notes": "Only CRM partners count, as in today's load."
+    },
+    {
+      "table": "UBB_CORE2.CREDIT_LIMIT",
+      "join_type": "left",
+      "condition": "CREDIT_LIMIT.SOURCE_SYSTEM = 'CBS_SIM' AND CREDIT_LIMIT.LIMIT_REF = STG_LOAN.LIMIT_REF",
+      "notes": "Left: a loan without a limit is kept. UQ_LIMIT_BK is unique."
+    },
+    {
+      "table": "UBB_CORE2.LIMIT_HIST",
+      "join_type": "left",
+      "condition": "LIMIT_HIST.LIMIT_ID = CREDIT_LIMIT.LIMIT_ID AND LIMIT_HIST.LOAD_ID = (SELECT CTRL_LOAD.LOAD_ID FROM CTRL_LOAD WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LIMIT' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED'))",
+      "notes": "The inner CTRL_LOAD (unqualified, resolved in the UBB_CORE2 definer schema) is the independent limit load, not the joined loan load. The limit snapshot of the same business date (the limit load is independent of the loan load). Filter keeps a loan only without LIMIT_REF or when the limit exists in that snapshot for the same partner; guard AC11 stops the run otherwise."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "ac_id": "AC01",
+      "description": "No LOAN_ID and LOAD_ID occurs twice in LOAN_HIST.",
+      "check_type": "unique_key",
+      "check_sql": "",
+      "expected": "",
+      "notes": "Grain: one row per loan and load. Data check after deployment."
+    },
+    {
+      "ac_id": "AC02",
+      "description": "Every loan of the selected CBS loan load is in LOAN_HIST.",
+      "check_type": "all_source_rows_loaded",
+      "check_sql": "",
+      "expected": "",
+      "notes": "The inner joins to LOAN and PARTNER_HIST would silently leave a loan out; this test shows it. Rows left out are not repaired."
+    },
+    {
+      "ac_id": "AC03",
+      "description": "Every loaded loan with an undrawn amount above 0 has a credit conversion factor.",
+      "check_type": "zero_rows",
+      "check_sql": "SELECT LOAN_HIST.LOAN_ID FROM UBB_CORE2.LOAN_HIST JOIN UBB_CORE2.CTRL_LOAD ON CTRL_LOAD.LOAD_ID = LOAN_HIST.LOAD_ID WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND LOAN_HIST.UNDRAWN_AMT > 0 AND LOAN_HIST.CREDIT_CONVERSION_FACTOR IS NULL",
+      "expected": "",
+      "notes": "Proves REQ-13, REQ-28, IN-08: gross exposure can be calculated for every loan."
+    },
+    {
+      "ac_id": "AC04",
+      "description": "Every credit conversion factor in LOAN_HIST is between 0 and 1.",
+      "check_type": "zero_rows",
+      "check_sql": "SELECT LOAN_HIST.LOAN_ID FROM UBB_CORE2.LOAN_HIST JOIN UBB_CORE2.CTRL_LOAD ON CTRL_LOAD.LOAD_ID = LOAN_HIST.LOAD_ID WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND LOAN_HIST.CREDIT_CONVERSION_FACTOR IS NOT NULL AND (LOAN_HIST.CREDIT_CONVERSION_FACTOR < 0 OR LOAN_HIST.CREDIT_CONVERSION_FACTOR > 1)",
+      "expected": "",
+      "notes": "Range from CBS_SIM agreement v1.1 section 3.1 (IN-08)."
+    },
+    {
+      "ac_id": "AC05",
+      "description": "The outstanding principal in LOAN_HIST equals the outstanding principal delivered in the CBS loan load of the date.",
+      "check_type": "expected_value",
+      "check_sql": "SELECT (SELECT SUM(LOAN_HIST.PRINCIPAL_AMT) FROM UBB_CORE2.LOAN_HIST JOIN UBB_CORE2.CTRL_LOAD ON CTRL_LOAD.LOAD_ID = LOAN_HIST.LOAD_ID WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED')) - (SELECT SUM(STG_LOAN.PRINCIPAL_AMT) FROM UBB_STAGING2.STG_LOAN JOIN UBB_CORE2.CTRL_LOAD ON CTRL_LOAD.LOAD_ID = STG_LOAN.LOAD_ID WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED')) AS DIFF FROM DUAL",
+      "expected": "0",
+      "notes": "Reconciliation of totals against the source."
+    },
+    {
+      "ac_id": "AC06",
+      "description": "Stop the run unless the business date is not empty and at midnight, and there is exactly one VALIDATED or COMPLETED CBS_SIM load of LOAN and of LIMIT for it.",
+      "check_type": "guard",
+      "check_sql": "SELECT 1 AS BAD FROM DUAL WHERE P_BUSINESS_DATE IS NULL OR P_BUSINESS_DATE <> TRUNC(P_BUSINESS_DATE) OR (SELECT COUNT(*) FROM UBB_CORE2.CTRL_LOAD WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED')) <> 1 OR (SELECT COUNT(*) FROM UBB_CORE2.CTRL_LOAD WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LIMIT' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED')) <> 1",
+      "expected": "",
+      "notes": "Same rules as PKG_ETL_LOAN.LOAD_DAY and PKG_ETL_CONTROL.FIND_SOURCE_LOAD (-20300, -20011, -20012)."
+    },
+    {
+      "ac_id": "AC07",
+      "description": "Stop the run when the CBS limit snapshot load of the date has not COMPLETED in the job run log.",
+      "check_type": "guard",
+      "check_sql": "SELECT 1 AS BAD FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM UBB_CORE2.CTRL_JOB_RUN WHERE CTRL_JOB_RUN.JOB_NAME = 'LOAD_LIMIT' AND CTRL_JOB_RUN.RUN_STATUS = 'COMPLETED' AND CTRL_JOB_RUN.SOURCE_LOAD_ID IN (SELECT CTRL_LOAD.LOAD_ID FROM UBB_CORE2.CTRL_LOAD WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LIMIT' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED')))",
+      "expected": "",
+      "notes": "As -20304 of PKG_ETL_LOAN.LOAD_DAY. Precondition: the limit load runs first."
+    },
+    {
+      "ac_id": "AC08",
+      "description": "Stop the run when a loan of the load has no partner reference, currency, outstanding principal, undrawn amount or overdue amount.",
+      "check_type": "guard",
+      "check_sql": "SELECT STG_LOAN.LOAN_REF FROM UBB_STAGING2.STG_LOAN JOIN UBB_CORE2.CTRL_LOAD ON CTRL_LOAD.LOAD_ID = STG_LOAN.LOAD_ID WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED') AND (STG_LOAN.CBS_PARTNER_REF IS NULL OR STG_LOAN.CURRENCY_CODE IS NULL OR STG_LOAN.PRINCIPAL_AMT IS NULL OR STG_LOAN.UNDRAWN_AMT IS NULL OR STG_LOAN.OVERDUE_AMT IS NULL)",
+      "expected": "",
+      "notes": "-20302 of today's load (partner reference, currency); the three amounts are NOT NULL in LOAN_HIST and would otherwise fail the insert (D09)."
+    },
+    {
+      "ac_id": "AC09",
+      "description": "Stop the run when the CBS partner reference of a loan does not match exactly one CRM partner valid on the business date.",
+      "check_type": "guard",
+      "check_sql": "SELECT STG_LOAN.LOAN_REF FROM UBB_STAGING2.STG_LOAN JOIN UBB_CORE2.CTRL_LOAD ON CTRL_LOAD.LOAD_ID = STG_LOAN.LOAD_ID WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED') AND (SELECT COUNT(*) FROM UBB_CORE2.PARTNER_HIST JOIN UBB_CORE2.PARTNER ON PARTNER.PARTNER_ID = PARTNER_HIST.PARTNER_ID WHERE PARTNER.SOURCE_SYSTEM = 'CRM_SIM' AND PARTNER_HIST.CBS_PARTNER_REF = STG_LOAN.CBS_PARTNER_REF AND PARTNER_HIST.VALID_FROM <= P_BUSINESS_DATE AND PARTNER_HIST.VALID_TO > P_BUSINESS_DATE) <> 1",
+      "expected": "",
+      "notes": "-20303 of today's load. Proves REQ-27: an ambiguous or missing borrower reference stops the run, no partial snapshot."
+    },
+    {
+      "ac_id": "AC10",
+      "description": "Stop the run when a loan of the load has no row in UBB_CORE2.LOAN.",
+      "check_type": "guard",
+      "check_sql": "SELECT STG_LOAN.LOAN_REF FROM UBB_STAGING2.STG_LOAN JOIN UBB_CORE2.CTRL_LOAD ON CTRL_LOAD.LOAD_ID = STG_LOAN.LOAD_ID WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED') AND NOT EXISTS (SELECT 1 FROM UBB_CORE2.LOAN WHERE LOAN.SOURCE_SYSTEM = 'CBS_SIM' AND LOAN.LOAN_REF = STG_LOAN.LOAN_REF)",
+      "expected": "",
+      "notes": "Consequence of decision D01: this load does not create LOAN rows, so it says so instead of leaving the loan out."
+    },
+    {
+      "ac_id": "AC11",
+      "description": "Stop the run when a LIMIT_REF of a loan is not found exactly once in the limit snapshot of the date for the loan's partner.",
+      "check_type": "guard",
+      "check_sql": "SELECT STG_LOAN.LOAN_REF FROM UBB_STAGING2.STG_LOAN JOIN UBB_CORE2.CTRL_LOAD ON CTRL_LOAD.LOAD_ID = STG_LOAN.LOAD_ID WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED') AND STG_LOAN.LIMIT_REF IS NOT NULL AND (SELECT COUNT(*) FROM UBB_CORE2.CREDIT_LIMIT JOIN UBB_CORE2.LIMIT_HIST ON LIMIT_HIST.LIMIT_ID = CREDIT_LIMIT.LIMIT_ID JOIN UBB_CORE2.PARTNER_HIST ON PARTNER_HIST.PARTNER_ID = LIMIT_HIST.PARTNER_ID AND PARTNER_HIST.VALID_FROM <= P_BUSINESS_DATE AND PARTNER_HIST.VALID_TO > P_BUSINESS_DATE JOIN UBB_CORE2.PARTNER ON PARTNER.PARTNER_ID = PARTNER_HIST.PARTNER_ID AND PARTNER.SOURCE_SYSTEM = 'CRM_SIM' WHERE CREDIT_LIMIT.SOURCE_SYSTEM = 'CBS_SIM' AND CREDIT_LIMIT.LIMIT_REF = STG_LOAN.LIMIT_REF AND PARTNER_HIST.CBS_PARTNER_REF = STG_LOAN.CBS_PARTNER_REF AND LIMIT_HIST.LOAD_ID = (SELECT CTRL_LOAD.LOAD_ID FROM UBB_CORE2.CTRL_LOAD WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LIMIT' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED'))) <> 1",
+      "expected": "",
+      "notes": "-20305 of today's load."
+    },
+    {
+      "ac_id": "AC12",
+      "description": "Stop the run when a loan has an undrawn amount above 0 and no credit conversion factor, or a factor outside 0 to 1.",
+      "check_type": "guard",
+      "check_sql": "SELECT STG_LOAN.LOAN_REF FROM UBB_STAGING2.STG_LOAN JOIN UBB_CORE2.CTRL_LOAD ON CTRL_LOAD.LOAD_ID = STG_LOAN.LOAD_ID WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED') AND ((STG_LOAN.UNDRAWN_AMT > 0 AND STG_LOAN.CREDIT_CONVERSION_FACTOR IS NULL) OR STG_LOAN.CREDIT_CONVERSION_FACTOR < 0 OR STG_LOAN.CREDIT_CONVERSION_FACTOR > 1)",
+      "expected": "",
+      "notes": "IN-08, REQ-13, REQ-28: a missing CCF stops the snapshot (gap analysis IN-08; KPI-04 exceptions). Agreement v1.1: always delivered when undrawn > 0, a fraction between 0 and 1."
+    },
+    {
+      "ac_id": "AC13",
+      "description": "Stop the run when a LOAN_HIST snapshot of the selected CBS loan load already exists.",
+      "check_type": "guard",
+      "check_sql": "SELECT LOAN_HIST.LOAN_ID FROM UBB_CORE2.LOAN_HIST JOIN UBB_CORE2.CTRL_LOAD ON CTRL_LOAD.LOAD_ID = LOAN_HIST.LOAD_ID WHERE CTRL_LOAD.SOURCE_SYSTEM = 'CBS_SIM' AND CTRL_LOAD.DATASET_NAME = 'LOAN' AND CTRL_LOAD.BUSINESS_DATE = P_BUSINESS_DATE AND CTRL_LOAD.LOAD_STATUS IN ('VALIDATED', 'COMPLETED')",
+      "expected": "",
+      "notes": "A reported snapshot is immutable (BR-14 principle). Today's load ends silently when the snapshot is complete; here a re-run is refused (D03)."
+    }
+  ],
+  "sources": [
+    {
+      "topic": "Load plan row and requirements",
+      "source_type": "other",
+      "reference": "change-requests/CR-ECB-001/CR-ECB-001_Gap_Analysis.xlsx, sheets Load_Plan (M_LOAN_HIST) and Gaps (IN-08); CR-ECB-001_Requirements.xlsx REQ-13, REQ-28, BR-01, KPI-04, Q-01, GC-06",
+      "finding": "LOAN_HIST gets one new column, the credit conversion factor, per loan; grain unchanged. Gross exposure = principal + undrawn x CCF; overdue is inside principal. A missing CCF stops the snapshot."
+    },
+    {
+      "topic": "Target table",
+      "source_type": "sql",
+      "reference": "python tools/mapping_spec/schema_catalog.py UBB_CORE2.LOAN_HIST",
+      "finding": "14 columns, key LOAN_ID + LOAD_ID, FK to LOAN, CTRL_LOAD, PARTNER, CREDIT_LIMIT; no CREDIT_CONVERSION_FACTOR yet; amounts NOT NULL, CHECK amounts >= 0 and MATURITY_DATE >= START_DATE."
+    },
+    {
+      "topic": "Existing load of the target",
+      "source_type": "sql",
+      "reference": "sql/UBB_CORE2.schema/PKG_ETL_LOAN_1.sql (PKG_ETL_LOAN.LOAD_DAY, lines 8-170); package_usage.py UBB_CORE2.LOAN_HIST",
+      "finding": "LOAD_DAY already inserts LOAN_HIST, also merges LOAN (new LOAN_ID from SEQ_LOAN), resolves the CRM partner valid at the date and the limit of the same date, raises -20300..-20307, leaves a complete snapshot untouched and logs through PKG_ETL_CONTROL. This mapping repeats the LOAN_HIST rules of that load (joins, filters, checks as guards) and adds the CCF; see D01."
+    },
+    {
+      "topic": "Source load selection",
+      "source_type": "sql",
+      "reference": "sql/UBB_CORE2.schema/PKG_ETL_CONTROL_1.sql (FIND_SOURCE_LOAD, lines 6-27); UBB_CORE2.CTRL_LOAD",
+      "finding": "Exactly one CTRL_LOAD row per source, dataset and date with status VALIDATED or COMPLETED, else error; the date comes only from CTRL_LOAD."
+    },
+    {
+      "topic": "Source staging table",
+      "source_type": "sql",
+      "reference": "python tools/mapping_spec/schema_catalog.py UBB_STAGING2.STG_LOAN",
+      "finding": "Key LOAD_ID + LOAN_REF; amounts and currency nullable; CREDIT_CONVERSION_FACTOR NUMBER(9,6) is PLANNED from CBS_SIM agreement v1.1, not deployed yet (staging change dev-1 first)."
+    },
+    {
+      "topic": "Delivery agreement",
+      "source_type": "other",
+      "reference": "change-requests/CR-ECB-001/UBB_Delivery_Agreement_CBS_SIM_v1.1.docx, 3.1 LOAN, change DAC-01",
+      "finding": "CREDIT_CONVERSION_FACTOR NUMBER(9,6): fraction between 0 and 1, always delivered for a loan with an undrawn amount greater than 0."
+    },
+    {
+      "topic": "Source catalog gaps",
+      "source_type": "other",
+      "reference": "python tools/mapping_spec/source_catalog.py gaps STG_LOAN; business-documents/UBB_Source_Systems_Entities_Attributes_v3.0.xlsx, sheet CBS_SIM",
+      "finding": "CREDIT_CONVERSION_FACTOR: planned (no conflict). DEFAULT_FLAG is interface_change but no input of CR-ECB-001 needs it; not mapped."
+    },
+    {
+      "topic": "Related tables",
+      "source_type": "sql",
+      "reference": "schema_catalog.py UBB_CORE2.LOAN, PARTNER_HIST, PARTNER, CREDIT_LIMIT, LIMIT_HIST, CTRL_JOB_RUN; package_usage.py",
+      "finding": "LOAN unique on (SOURCE_SYSTEM, LOAN_REF); CREDIT_LIMIT unique on (SOURCE_SYSTEM, LIMIT_REF); PARTNER_HIST key (PARTNER_ID, VALID_FROM), VALID_TO exclusive, CBS_PARTNER_REF not a key; LOAN is written only by PKG_ETL_LOAN.LOAD_DAY."
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D01",
+      "topic": "Relation to PKG_ETL_LOAN.LOAD_DAY and creation of LOAN",
+      "question": "LOAN_HIST is loaded today by PKG_ETL_LOAN.LOAD_DAY, which also creates the LOAN rows and logs the run. A generated mapping has one target and does not log. Does M_LOAN_HIST replace only the LOAN_HIST part (LOAN created by an earlier load), replace the whole load (a second mapping M_LOAN, back to ba-2), or is the CCF added to PKG_ETL_LOAN by hand?",
+      "decision": "replace only the LOAN_HIST part with a new package UBB_CORE2.PKG_ETL_LOAN_HIST.LOAD_DAY; LOAN rows must exist already (AC10 stops the run otherwise). Who then creates the LOAN rows, and what happens to the LOAN_HIST insert in PKG_ETL_LOAN.LOAD_DAY, must be decided: both loads cannot write the same snapshot.",
+      "decided_by": "",
+      "decided_on": "",
+      "status": "decided"
+    },
+    {
+      "id": "D02",
+      "topic": "Grain and key",
+      "question": "Grain and business key of the load?",
+      "decision": "One row per loan and load, key LOAN_ID + LOAD_ID: unchanged from the load plan row and from the primary key of LOAN_HIST.",
+      "decided_by": "",
+      "decided_on": "",
+      "status": "decided"
+    },
+    {
+      "id": "D03",
+      "topic": "Load strategy and re-run",
+      "question": "What does a re-run for the same date do?",
+      "decision": "append with guard AC13, so a re-run is refused and an existing snapshot is never overwritten. Today a re-run of a complete snapshot ends silently without a change, and a partial one raises -20306. delete_insert is not possible because the predicate may name only target columns and parameters, and LOAD_ID is not a parameter.",
+      "decided_by": "",
+      "decided_on": "",
+      "status": "decided"
+    },
+    {
+      "id": "D04",
+      "topic": "Row scope",
+      "question": "Which loans does a run read?",
+      "decision": "All loans of the one VALIDATED or COMPLETED CBS_SIM LOAN load of P_BUSINESS_DATE, whatever their status or type; the active-status scope (BR-17, open question Q-07 of the gap analysis) is applied by M_EXPOSURE_HIST, not here.",
+      "decided_by": "",
+      "decided_on": "",
+      "status": "decided"
+    },
+    {
+      "id": "D05",
+      "topic": "Joins and missing lookups",
+      "question": "What happens to a loan whose partner or limit is not found?",
+      "decision": "Baseline of today's load: partner not found exactly once, or LIMIT_REF not found for the partner, stops the whole run (AC09, AC11); a loan without LIMIT_REF is kept (left join). No loan is left out silently.",
+      "decided_by": "",
+      "decided_on": "",
+      "status": "decided"
+    },
+    {
+      "id": "D06",
+      "topic": "Credit conversion factor column",
+      "question": "Type, nullability and rule of the new column?",
+      "decision": "CREDIT_CONVERSION_FACTOR NUMBER(9,6), nullable, copied unchanged from STG_LOAN (per loan, gap analysis IN-08, answers requirements Q-01). It may be empty only when UNDRAWN_AMT = 0; empty with undrawn above 0, or a value outside 0 to 1, stops the run (AC12). No default and no product-level factor.",
+      "decided_by": "",
+      "decided_on": "",
+      "status": "decided"
+    },
+    {
+      "id": "D07",
+      "topic": "Snapshots loaded before this change",
+      "question": "Snapshots already in LOAN_HIST (and their STG_LOAN rows) have no CCF. Are earlier reporting dates reported (a backfill or reload from a redelivery is needed), or only dates from the deployment on?",
+      "decision": "Needs the analyst and the CBS_SIM source owner.",
+      "decided_by": "",
+      "decided_on": "",
+      "status": "decided"
+    },
+    {
+      "id": "D08",
+      "topic": "Run log",
+      "question": "Today's load writes CTRL_JOB_RUN (PKG_ETL_CONTROL.START_RUN / COMPLETE_RUN / FAIL_RUN) and AC07 reads the LOAD_LIMIT run. A generated load never logs.",
+      "decision": "the calling job writes the run log (generated packages never log). The developer must confirm how the job logs the LOAD_LOAN run for this procedure.",
+      "decided_by": "",
+      "decided_on": "",
+      "status": "decided"
+    },
+    {
+      "id": "D09",
+      "topic": "Missing amounts",
+      "question": "PRINCIPAL_AMT, UNDRAWN_AMT and OVERDUE_AMT are nullable in staging but NOT NULL in LOAN_HIST. What happens to a missing amount?",
+      "decision": "PROPOSED, not confirmed: stop the run (AC08), never default to 0. Today the insert fails on the NOT NULL column, with the same effect, but without a clear message.",
+      "decided_by": "",
+      "decided_on": "",
+      "status": "decided"
+    },
+    {
+      "id": "D10",
+      "topic": "Gap: UBB_STAGING2.STG_LOAN.CREDIT_CONVERSION_FACTOR",
+      "question": "The column is promised by the approved CBS_SIM agreement v1.1 but is not deployed (planned). Status planned: no new gap.",
+      "decision": "Mapped as a planned column. Before this load runs: /dev-1-implement-staging-change CR-ECB-001 (STG_LOAN.sql) deployed by hand and sql/ exported again. The loader of the delivered file into STG_LOAN is outside this repository and must be extended by hand.",
+      "decided_by": "",
+      "decided_on": "",
+      "status": "decided"
+    },
+    {
+      "id": "D11",
+      "topic": "Not in scope",
+      "question": "Which other CBS loan attributes?",
+      "decision": "None. DEFAULT_FLAG (catalog status interface_change) is not an input of CR-ECB-001 and is not mapped.",
+      "decided_by": "",
+      "decided_on": "",
+      "status": "decided"
+    }
+  ]
+}

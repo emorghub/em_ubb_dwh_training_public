@@ -1,0 +1,22 @@
+# Mapping workbooks are binary. With the textconv driver below configured once
+# per clone, `git diff` shows them as readable text instead of "Binary files differ":
+#   git config diff.xlsx.textconv "python tools/mapping_spec/mapping_workbook.py textconv"
+
+# Keep line endings as LF in the working copy on every machine. This stops the
+# "LF will be replaced by CRLF" warnings that core.autocrlf=true causes on Windows.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.xlsx binary diff=xlsx
+
+# Left out of the workshop ZIP (git archive). The files stay in git.
+start_tunnel.ps1                     export-ignore
+Issues.md                            export-ignore
+sql/optimizer-statistics/**          export-ignore
+docs/presentation/**                 export-ignore
+docs/paint_architecture_drawing.jpg  export-ignore
+docs/analysis_examples/**            export-ignore
+# Attendees build these themselves; specs/README.md stays as the guide.
+change-requests                      export-ignore
+change-requests/**                   export-ignore
+specs/*                              export-ignore
+specs/README.md                      -export-ignore

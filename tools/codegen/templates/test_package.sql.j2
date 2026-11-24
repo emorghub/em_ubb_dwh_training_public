@@ -1,0 +1,308 @@
+{% include "_header.sql.j2" %}
+--
+-- utPLSQL tests for {{ target }}: one test per acceptance criterion in the
+-- mapping, plus a check that the test data actually reaches the load (so no
+-- test can pass just because nothing was loaded).
+{% if guards %}
+-- A guard test loads the good data, adds the data that breaks the guard, and
+-- expects the next run to be refused with the target left unchanged.
+{% endif %}
+-- Test data lives in {{ data_package }} (tests/{{ data_package }}.sql), which the
+-- generator writes once and never overwrites.
+-- Every test runs inside a transaction utPLSQL rolls back afterwards
+-- (--%rollback(auto)); that works because the load procedure never commits.
+{% if is_scd2 %}
+-- SCD2: every test starts from an empty {{ target_table }} and {{ load_log_table }}
+-- (rolled back afterwards too), so no test depends on, or replays, real history.
+-- The history tests load {{ effective_param }} and {{ next_date }}, the two dates of the test data.
+{% endif %}
+--
+-- Running this file also runs the tests (last statement). Deploy the test data
+-- package ({{ data_package }}) first. To rerun later without redeploying:
+--   EXEC ut.run('{{ package_schema }}.{{ test_package }}');
+{% macro key_match(left, right) -%}
+{% for k in key_columns %}{{ left }}.{{ k }} = {{ right }}.{{ k }}{{ " AND " if not loop.last }}{% endfor %}
+{%- endmacro %}
+
+CREATE OR REPLACE PACKAGE {{ package_schema }}.{{ test_package }} AS
+    --%suite({{ target_table }} load - mapping {{ mapping_id }})
+    --%suitepath(ubb_core2)
+    --%rollback(auto)
+
+    --%beforeeach
+    PROCEDURE seed;
+
+    --%test(The test data gives the source query at least one row)
+    PROCEDURE t_fixture_has_rows;
+{% if is_scd2 %}
+
+    --%test(History: loading {{ next_date }} after {{ effective_param }} closes versions and adds new ones, without overlaps)
+    PROCEDURE t_history_next_date;
+
+    --%test(History: loading the two dates in the wrong order gives the same history as in order)
+    PROCEDURE t_history_out_of_order;
+
+    --%test(History: re-running the earlier date after the later one leaves the history unchanged)
+    PROCEDURE t_history_rerun_earlier_date;
+{% endif %}
+{% for t in tests %}
+
+    --%test({{ t.id }}: {{ t.description }})
+    PROCEDURE {{ t.proc }};
+{% endfor %}
+END {{ test_package }};
+/
+
+CREATE OR REPLACE PACKAGE BODY {{ package_schema }}.{{ test_package }} AS
+
+    -- The parameter values the load runs with, taken from the test data package
+    -- so Check_SQL from the mapping can use them by name.
+{% for p in parameters %}
+    {{ p.name }} CONSTANT {{ p.decl_type }} := {{ package_schema }}.{{ data_package }}.{{ p.name }};
+{% endfor %}
+{% if is_scd2 %}
+    {{ next_date }} CONSTANT DATE := {{ package_schema }}.{{ data_package }}.{{ next_date }};
+{% endif %}
+
+    PROCEDURE seed IS
+    BEGIN
+{% if is_scd2 %}
+        DELETE FROM {{ target }};
+        DELETE FROM {{ load_log }};
+{% endif %}
+        {{ package_schema }}.{{ data_package }}.seed;
+    END seed;
+{% if is_scd2 %}
+
+    PROCEDURE run_load_for(p_load_date IN DATE) IS
+    BEGIN
+        {{ package_schema }}.{{ package }}.{{ procedure }}({{ effective_param }} => p_load_date);
+    END run_load_for;
+
+    PROCEDURE run_load IS
+    BEGIN
+        run_load_for({{ effective_param }});
+    END run_load;
+
+    -- Pairs of versions of one key whose periods overlap: must always be none.
+    FUNCTION overlaps RETURN INTEGER IS
+        l_count INTEGER;
+    BEGIN
+        SELECT COUNT(*) INTO l_count
+        FROM {{ target }} a
+        JOIN {{ target }} b
+          ON {{ key_match("b", "a") }}
+         AND a.VALID_FROM < b.VALID_FROM
+         AND b.VALID_FROM < a.VALID_TO;
+        RETURN l_count;
+    END overlaps;
+{% else %}
+
+    PROCEDURE run_load IS
+    BEGIN
+        {{ package_schema }}.{{ package }}.{{ procedure }}({% for p in parameters %}{{ p.name }} => {{ p.name }}{{ ", " if not loop.last }}{% endfor %});
+    END run_load;
+{% endif %}
+{% if is_scd2 or guards %}
+
+    -- Row count and a content hash of the whole target, to compare two states of it.
+    PROCEDURE measure(o_rows OUT INTEGER, o_hash OUT NUMBER) IS
+    BEGIN
+        SELECT COUNT(*), NVL(SUM({{ hash_expr }}), 0)
+          INTO o_rows, o_hash
+          FROM {{ target }};
+    END measure;
+{% endif %}
+
+    PROCEDURE t_fixture_has_rows IS
+        l_rows INTEGER;
+    BEGIN
+        SELECT COUNT(*) INTO l_rows FROM (
+{{ source_query_12 }}
+        );
+        ut.expect(l_rows, 'source rows produced by the test data').to_be_greater_than(0);
+    END t_fixture_has_rows;
+{% if is_scd2 %}
+
+    PROCEDURE t_history_next_date IS
+        l_closed INTEGER;
+        l_added  INTEGER;
+    BEGIN
+        {{ package_schema }}.{{ data_package }}.seed_next_date;
+        run_load_for({{ effective_param }});
+        run_load_for({{ next_date }});
+        SELECT COUNT(*) INTO l_closed FROM {{ target }} WHERE VALID_TO = {{ next_date }};
+        SELECT COUNT(*) INTO l_added FROM {{ target }} WHERE VALID_FROM = {{ next_date }};
+        ut.expect(l_closed, 'versions closed by {{ next_date }} (the test data must change a key)').to_be_greater_than(0);
+        ut.expect(l_added, 'versions added by {{ next_date }}').to_be_greater_than(0);
+        ut.expect(overlaps, 'overlapping versions of one key').to_equal(0);
+    END t_history_next_date;
+
+    PROCEDURE t_history_out_of_order IS
+        l_rows_in_order  INTEGER;
+        l_hash_in_order  NUMBER;
+        l_rows_reversed  INTEGER;
+        l_hash_reversed  NUMBER;
+    BEGIN
+        {{ package_schema }}.{{ data_package }}.seed_next_date;
+        run_load_for({{ effective_param }});
+        run_load_for({{ next_date }});
+        measure(l_rows_in_order, l_hash_in_order);
+
+        DELETE FROM {{ target }};
+        DELETE FROM {{ load_log }};
+        run_load_for({{ next_date }});
+        run_load_for({{ effective_param }});  -- arrives late: rewinds, loads it, replays {{ next_date }}
+        measure(l_rows_reversed, l_hash_reversed);
+
+        ut.expect(l_rows_reversed, 'versions when {{ effective_param }} arrives late').to_equal(l_rows_in_order);
+        ut.expect(l_hash_reversed, 'history when {{ effective_param }} arrives late').to_equal(l_hash_in_order);
+    END t_history_out_of_order;
+
+    PROCEDURE t_history_rerun_earlier_date IS
+        l_rows_before INTEGER;
+        l_hash_before NUMBER;
+        l_rows_after  INTEGER;
+        l_hash_after  NUMBER;
+        l_logged      INTEGER;
+    BEGIN
+        {{ package_schema }}.{{ data_package }}.seed_next_date;
+        run_load_for({{ effective_param }});
+        run_load_for({{ next_date }});
+        measure(l_rows_before, l_hash_before);
+
+        run_load_for({{ effective_param }});
+        measure(l_rows_after, l_hash_after);
+        SELECT COUNT(*) INTO l_logged FROM {{ load_log }};
+
+        ut.expect(l_rows_after, 'versions after re-running {{ effective_param }}').to_equal(l_rows_before);
+        ut.expect(l_hash_after, 'history after re-running {{ effective_param }}').to_equal(l_hash_before);
+        ut.expect(l_logged, 'dates in {{ load_log_table }}').to_equal(2);
+    END t_history_rerun_earlier_date;
+{% endif %}
+{% for t in tests %}
+
+    -- {{ t.id }} ({{ t.check_type }}): {{ t.description }}
+{% if t.check_type == "unique_key" and is_scd2 %}
+    PROCEDURE {{ t.proc }} IS
+        l_open_duplicates INTEGER;
+    BEGIN
+        run_load;
+        -- SCD2: a key is unique at every point in time - one current version and
+        -- no two versions overlapping.
+        SELECT COUNT(*) INTO l_open_duplicates FROM (
+            SELECT {{ key_columns | join(", ") }}
+            FROM {{ target }}
+            WHERE VALID_TO = {{ open_valid_to }}
+            GROUP BY {{ key_columns | join(", ") }}
+            HAVING COUNT(*) > 1
+        );
+        ut.expect(l_open_duplicates, 'business keys with more than one current version').to_equal(0);
+        ut.expect(overlaps, 'overlapping versions of one key').to_equal(0);
+    END {{ t.proc }};
+{% elif t.check_type == "unique_key" %}
+    PROCEDURE {{ t.proc }} IS
+        l_duplicates INTEGER;
+    BEGIN
+        run_load;
+        SELECT COUNT(*) INTO l_duplicates FROM (
+            SELECT {{ key_columns | join(", ") }}
+            FROM {{ target }}
+            GROUP BY {{ key_columns | join(", ") }}
+            HAVING COUNT(*) > 1
+        );
+        ut.expect(l_duplicates, 'business keys that occur more than once').to_equal(0);
+    END {{ t.proc }};
+{% elif t.check_type == "rerun_idempotent" %}
+    PROCEDURE {{ t.proc }} IS
+        l_rows_first  INTEGER;
+        l_hash_first  NUMBER;
+        l_rows_second INTEGER;
+        l_hash_second NUMBER;
+    BEGIN
+        run_load;
+        SELECT COUNT(*), NVL(SUM({{ hash_expr }}), 0)
+          INTO l_rows_first, l_hash_first
+          FROM {{ target }};
+        run_load;
+        SELECT COUNT(*), NVL(SUM({{ hash_expr }}), 0)
+          INTO l_rows_second, l_hash_second
+          FROM {{ target }};
+        ut.expect(l_rows_second, 'row count after running the same load twice').to_equal(l_rows_first);
+        ut.expect(l_hash_second, 'content after running the same load twice').to_equal(l_hash_first);
+    END {{ t.proc }};
+{% elif t.check_type == "all_source_rows_loaded" %}
+    PROCEDURE {{ t.proc }} IS
+        l_missing INTEGER;
+    BEGIN
+        run_load;
+        SELECT COUNT(*) INTO l_missing FROM (
+            SELECT {{ key_columns | join(", ") }} FROM (
+{{ source_query_16 }}
+            )
+            MINUS
+            SELECT {{ key_columns | join(", ") }} FROM {{ target }}
+{% if is_scd2 %}
+            -- the versions valid on the loaded date
+            WHERE VALID_FROM <= {{ effective_param }} AND {{ effective_param }} < VALID_TO{% if has_is_deleted %} AND IS_DELETED = 'N'{% endif %}
+
+{% endif %}
+        );
+        ut.expect(l_missing, 'source rows that did not reach the target').to_equal(0);
+    END {{ t.proc }};
+{% elif t.check_type == "zero_rows" %}
+    PROCEDURE {{ t.proc }} IS
+        l_violations INTEGER;
+    BEGIN
+        run_load;
+        SELECT COUNT(*) INTO l_violations FROM (
+            {{ t.check_sql | indent(12) }}
+        );
+        ut.expect(l_violations, 'rows that break {{ t.id }}').to_equal(0);
+    END {{ t.proc }};
+{% elif t.check_type == "expected_value" %}
+    PROCEDURE {{ t.proc }} IS
+        l_actual {{ "NUMBER" if t.expected_is_number else "VARCHAR2(4000)" }};
+    BEGIN
+        run_load;
+        SELECT * INTO l_actual FROM (
+            {{ t.check_sql | indent(12) }}
+        );
+        ut.expect(l_actual, '{{ t.id }} value').to_equal({{ t.expected_literal }});
+    END {{ t.proc }};
+{% elif t.check_type == "guard" %}
+    PROCEDURE {{ t.proc }} IS
+        l_rows_before INTEGER;
+        l_hash_before NUMBER;
+        l_rows_after  INTEGER;
+        l_hash_after  NUMBER;
+        l_refused     BOOLEAN := FALSE;
+    BEGIN
+        run_load;  -- a good run first, so "unchanged" below means something
+        measure(l_rows_before, l_hash_before);
+        {{ package_schema }}.{{ data_package }}.{{ t.seed_proc }};  -- source rows that break {{ t.id }}
+        BEGIN
+            run_load;
+        EXCEPTION
+            WHEN {{ package_schema }}.{{ package }}.e_guard_failed THEN
+                l_refused := TRUE;
+        END;
+        measure(l_rows_after, l_hash_after);
+        ut.expect(l_refused, 'the load refused the source (ORA{{ guard_error }})').to_be_true();
+        ut.expect(l_rows_after, 'rows after the refused run (no partial snapshot)').to_equal(l_rows_before);
+        ut.expect(l_hash_after, 'content after the refused run (no partial snapshot)').to_equal(l_hash_before);
+    END {{ t.proc }};
+{% endif %}
+{% endfor %}
+
+END {{ test_package }};
+/
+
+-- Run the tests just deployed. Run this file as a script (SQL Developer F5,
+-- SQLcl or SQL*Plus) so the report is printed; it needs the data package, the
+-- load package and the target table to be deployed already.
+SET SERVEROUTPUT ON SIZE UNLIMITED
+BEGIN
+    ut.run('{{ package_schema }}.{{ test_package }}');
+END;
+/

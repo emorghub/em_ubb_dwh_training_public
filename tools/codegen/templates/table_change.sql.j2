@@ -1,0 +1,41 @@
+{% include "_header.sql.j2" %}
+--
+-- Brings the existing {{ target }} in line with the mapping. Written by comparing
+-- the mapping with the table script in sql/ on {{ generated_on }}; deploy it instead of
+-- {{ target_table }}.sql, which holds the full definition.
+-- Only safe, additive changes are executed. Anything that could lose data or
+-- fail on existing rows is listed at the bottom for a person to decide.
+{% if add_columns %}
+
+ALTER TABLE {{ target }} ADD (
+{% for col in add_columns %}
+    {{ col.name | ljust(name_width) }} {{ col.type }}{{ "," if not loop.last }}
+{% endfor %}
+);
+{% for col in add_columns %}
+COMMENT ON COLUMN {{ target }}.{{ col.name }} IS '{{ col.comment | sqlstr }}';
+{% endfor %}
+{% endif %}
+{% for col in widen_columns %}
+
+-- {{ col.name }}: {{ col.current_type }} -> {{ col.type }} (widening, no data can be lost)
+ALTER TABLE {{ target }} MODIFY ({{ col.name }} {{ col.type }});
+{% endfor %}
+{% for col in relax_null_columns %}
+
+-- {{ col.name }}: the mapping allows NULL, the existing column does not
+ALTER TABLE {{ target }} MODIFY ({{ col.name }} NULL);
+{% endfor %}
+{% if not (add_columns or widen_columns or relax_null_columns) %}
+
+-- No executable change: the existing table already matches the mapping.
+{% endif %}
+{% if manual_notes %}
+
+-- ---------------------------------------------------------------------------
+-- MANUAL DECISIONS NEEDED - nothing below is executed by this script:
+{% for note in manual_notes %}
+--   * {{ note }}
+{% endfor %}
+-- ---------------------------------------------------------------------------
+{% endif %}

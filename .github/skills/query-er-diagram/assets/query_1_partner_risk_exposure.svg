@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1560" height="970" viewBox="0 0 1560 970" role="img" aria-labelledby="diagram-title diagram-description">
+  <title id="diagram-title">Partner risk exposure query relationships</title>
+  <desc id="diagram-description">Five tables connected by the query's joins, with cardinalities at each endpoint.</desc>
+  <defs>
+    <style>
+      .table { fill:#ffffff; stroke:#334155; stroke-width:2; rx:10; }
+      .header { fill:#1e293b; }
+      .title { fill:#ffffff; font:700 18px Arial, sans-serif; }
+      .field { fill:#0f172a; font:14px Consolas, monospace; }
+      .pk { fill:#0369a1; font:700 14px Consolas, monospace; }
+      .fk { fill:#7c3aed; font:700 14px Consolas, monospace; }
+      .line { stroke:#64748b; stroke-width:2; fill:none; }
+      .label { fill:#475569; font:13px Arial, sans-serif; }
+      .filter { fill:#9a3412; font:13px Consolas, monospace; }
+      .filter-heading { fill:#9a3412; font:700 13px Arial, sans-serif; }
+      .cardinality { fill:#0f172a; font:700 14px Arial, sans-serif; }
+      .heading { fill:#0f172a; font:700 22px Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="1560" height="970" fill="#f8fafc"/>
+  <text x="40" y="42" class="heading">Query 1 - Partner Risk Exposure &amp; Collateral Coverage</text>
+  <text x="40" y="67" class="label">Lines represent query joins; endpoint labels show matching rows on that side.</text>
+
+  <!-- Connectors stay in the space between table boxes. -->
+  <path d="M350 350 H460 V210 H570" class="line"/>
+  <text x="360" y="341" class="cardinality">1</text>
+  <text x="530" y="201" class="cardinality">0..n</text>
+  <text x="470" y="229" class="label">LOAD_ID</text>
+
+  <path d="M350 460 H460 V620 H570" class="line"/>
+  <text x="360" y="451" class="cardinality">1</text>
+  <text x="530" y="611" class="cardinality">0..n</text>
+  <text x="470" y="639" class="label">LOAD_ID</text>
+
+  <path d="M740 415 V500" class="line"/>
+  <text x="750" y="433" class="cardinality">0..1</text>
+  <text x="750" y="491" class="cardinality">0..n</text>
+  <text x="750" y="462" class="label">PARTNER_ID</text>
+
+  <path d="M910 550 H1040 V220 H1160" class="line"/>
+  <text x="920" y="541" class="cardinality">0..n</text>
+  <text x="1114" y="211" class="cardinality">0..1</text>
+  <text x="1050" y="380" class="label">LIMIT_ID +</text>
+  <text x="1050" y="398" class="label">LOAD_ID</text>
+
+  <path d="M910 675 H1160" class="line"/>
+  <text x="920" y="666" class="cardinality">0..1</text>
+  <text x="1115" y="666" class="cardinality">0..n</text>
+  <text x="980" y="695" class="label">LOAN_ID + LOAD_ID</text>
+
+  <!-- CTRL_LOAD -->
+  <rect x="50" y="310" width="300" height="190" class="table"/>
+  <rect x="50" y="310" width="300" height="42" class="header"/>
+  <text x="200" y="338" text-anchor="middle" class="title">CTRL_LOAD</text>
+  <text x="68" y="378" class="pk">PK  LOAD_ID</text>
+  <text x="68" y="403" class="field">SOURCE_SYSTEM</text>
+  <text x="68" y="428" class="field">DATASET_NAME</text>
+  <text x="68" y="453" class="field">BUSINESS_DATE</text>
+  <text x="68" y="478" class="field">LOAD_STATUS</text>
+
+  <rect x="50" y="525" width="300" height="110" fill="#fff7ed" stroke="#fdba74" rx="8"/>
+  <text x="68" y="547" class="filter-heading">Eligible load filters</text>
+  <text x="68" y="571" class="filter">BUSINESS_DATE = as_of_date</text>
+  <text x="68" y="592" class="filter">LOAD_STATUS IN</text>
+  <text x="68" y="613" class="filter">('VALIDATED', 'COMPLETED')</text>
+
+  <!-- PARTNER_HIST -->
+  <rect x="570" y="95" width="340" height="320" class="table"/>
+  <rect x="570" y="95" width="340" height="42" class="header"/>
+  <text x="740" y="123" text-anchor="middle" class="title">PARTNER_HIST</text>
+  <text x="588" y="163" class="pk">PK  PARTNER_ID + VALID_FROM</text>
+  <text x="588" y="188" class="fk">FK  PARTNER_ID -&gt; PARTNER</text>
+  <text x="588" y="213" class="fk">FK  LOAD_ID -&gt; CTRL_LOAD</text>
+  <text x="588" y="238" class="field">VALID_FROM / VALID_TO</text>
+  <text x="588" y="263" class="field">IS_CURRENT</text>
+  <text x="588" y="288" class="field">PARTNER_NAME</text>
+  <text x="588" y="313" class="field">CUSTOMER_SEGMENT / RISK_RATING</text>
+  <path d="M585 326 H895" stroke="#fdba74" stroke-width="1"/>
+  <text x="588" y="346" class="filter-heading">Point-in-time filter</text>
+  <text x="588" y="369" class="filter">VALID_FROM &lt;= as_of_date</text>
+  <text x="588" y="391" class="filter">VALID_TO &gt; as_of_date</text>
+
+  <!-- LOAN_HIST -->
+  <rect x="570" y="500" width="340" height="270" class="table"/>
+  <rect x="570" y="500" width="340" height="42" class="header"/>
+  <text x="740" y="528" text-anchor="middle" class="title">LOAN_HIST</text>
+  <text x="588" y="568" class="pk">PK  LOAN_ID + LOAD_ID</text>
+  <text x="588" y="593" class="fk">FK  PARTNER_ID -&gt; PARTNER</text>
+  <text x="588" y="618" class="fk">FK  LIMIT_ID -&gt; CREDIT_LIMIT</text>
+  <text x="588" y="643" class="fk">FK  LOAD_ID -&gt; CTRL_LOAD</text>
+  <text x="588" y="668" class="field">LOAN_STATUS</text>
+  <text x="588" y="693" class="field">CURRENCY_CODE</text>
+  <text x="588" y="718" class="field">PRINCIPAL_AMT</text>
+  <text x="588" y="743" class="field">OVERDUE_AMT</text>
+
+  <rect x="570" y="790" width="340" height="65" fill="#fff7ed" stroke="#fdba74" rx="8"/>
+  <text x="588" y="812" class="filter-heading">After grouping (HAVING)</text>
+  <text x="588" y="838" class="filter">SUM(PRINCIPAL_AMT) &gt; 100000</text>
+
+  <!-- LIMIT_HIST -->
+  <rect x="1160" y="95" width="340" height="250" class="table"/>
+  <rect x="1160" y="95" width="340" height="42" class="header"/>
+  <text x="1330" y="123" text-anchor="middle" class="title">LIMIT_HIST</text>
+  <text x="1178" y="163" class="pk">PK  LIMIT_ID + LOAD_ID</text>
+  <text x="1178" y="188" class="fk">FK  PARTNER_ID -&gt; PARTNER</text>
+  <text x="1178" y="213" class="fk">FK  LOAD_ID -&gt; CTRL_LOAD</text>
+  <text x="1178" y="238" class="field">LIMIT_STATUS</text>
+  <text x="1178" y="263" class="field">CURRENCY_CODE</text>
+  <text x="1178" y="288" class="field">APPROVED_AMT</text>
+  <text x="1178" y="313" class="field">UTILIZED_AMT</text>
+
+  <!-- LOAN_COLLATERAL_REL_HIST -->
+  <rect x="1160" y="500" width="340" height="270" class="table"/>
+  <rect x="1160" y="500" width="340" height="42" class="header"/>
+  <text x="1330" y="528" text-anchor="middle" class="title">LOAN_COLLATERAL_REL_HIST</text>
+  <text x="1178" y="568" class="pk">PK  LOAN_ID + COLLATERAL_ID</text>
+  <text x="1178" y="593" class="pk">    + LOAD_ID</text>
+  <text x="1178" y="618" class="fk">FK  LOAN_ID -&gt; LOAN</text>
+  <text x="1178" y="643" class="fk">FK  COLLATERAL_ID -&gt; COLLATERAL</text>
+  <text x="1178" y="668" class="fk">FK  LOAD_ID -&gt; CTRL_LOAD</text>
+  <text x="1178" y="693" class="field">ALLOCATION_PCT</text>
+  <text x="1178" y="718" class="field">ALLOCATED_VALUE_AMT</text>
+  <text x="1178" y="743" class="field">RELATION_STATUS</text>
+
+  <text x="40" y="889" class="label">Query parameter: as_of_date = DATE '2026-11-19'. Eligible load filters apply to both partner and loan loads.</text>
+  <text x="40" y="912" class="label">Assumption: history periods do not overlap; each loan matches at most one partner version as of the selected date.</text>
+  <text x="40" y="935" class="label">History-to-history joins are not foreign keys; snapshot matches are not guaranteed by the exported constraints.</text>
+</svg>

@@ -1,0 +1,89 @@
+﻿{
+  "mapping": {
+    "Mapping_ID": "<Stable ID, e.g. M_CUSTOMER_ACCOUNT. Must equal the file name; the folder is the ID without M_, lower case (specs/customer_account/).>",
+    "Status": "draft | in_review  (never approved - a person does that in Excel)",
+    "Owner": "<The person accountable for this load.>",
+    "Approved_By": "",
+    "Approved_On": "",
+    "Source_Ref": "<Where the requirement came from: ticket key, URL, or 'chat'.>",
+    "Intent": "<Why this load exists and what report or question it serves.>",
+    "Target_Table": "<Fully qualified target, SCHEMA.TABLE, e.g. UBB_CORE2.CUSTOMER_ACCOUNT.>",
+    "Table_Description": "<What one row of the target table means, in business language.>",
+    "Grain": "<One row per what? e.g. 'one row per account per business date'.>",
+    "Business_Key": "<Target columns that identify a row, comma separated. Becomes the primary key.>",
+    "PLSQL_Proc": "<Procedure that loads the table, SCHEMA.PACKAGE.PROCEDURE.>",
+    "Parameters": "<Procedure parameters as NAME TYPE, separated by ';', e.g. 'P_BUSINESS_DATE DATE'. Write 'none' if it takes none.>",
+    "Driving_Table": "<The source table whose rows define the grain (the FROM table), SCHEMA.TABLE.>",
+    "Filter": "<Which source rows a run reads: a SQL condition without WHERE, e.g. STG_PARTNER.PARTNER_TYPE = 'PERSON', or 'none'.>",
+    "Group_By": "<Aggregating loads only: the target columns that define one target row when several source rows are summed into it, comma separated, e.g. LOAN_ID, LOAD_ID. Must include every Business_Key column. Every other column must then use only aggregates (SUM, MIN, MAX, COUNT, AVG...) of source columns, parameters or constants. Leave empty when one source row gives one target row.>",
+    "Load_Strategy": "<full = replace the whole table; delete_insert = replace the rows matched by Reload_Predicate; merge = update/insert on the business key; append = insert only (a re-run fails); scd2 = keep history: a change closes the current version and adds a new one (VALID_FROM/VALID_TO).>",
+    "Reload_Predicate": "<delete_insert only: which target rows one run replaces, e.g. BUSINESS_DATE = P_BUSINESS_DATE.>",
+    "Source_Snapshot": "<scd2 only: full = every run's source holds every key, so a missing key is recorded as deleted (IS_DELETED = Y); delta = the source holds only changed keys, so a missing key is unchanged.>",
+    "Not_For": "<What this load deliberately does NOT do. One item per line.>",
+    "Preconditions": "<What must be true before the load runs. One item per line.>",
+    "Error_Handling": "<What happens to bad or incomplete source rows. One item per line.>"
+  },
+  "columns": [
+    {
+      "target_column": "<Target_Column>",
+      "target_type": "<Target_Type>",
+      "nullable": "<Nullable>",
+      "source_table": "<Source_Table>",
+      "source_column": "<Source_Column>",
+      "transformation_rule": "<Transformation_Rule>",
+      "scd_type": "<SCD_Type>",
+      "business_name": "<Business_Name>",
+      "description": "<Description>",
+      "notes": "<Notes>"
+    }
+  ],
+  "item_columns": [
+    {
+      "item_column": "<Item_Column>",
+      "transformation_rule": "<Transformation_Rule>",
+      "description": "<Description>",
+      "notes": "<Notes>"
+    }
+  ],
+  "joins": [
+    {
+      "table": "<Table>",
+      "join_type": "<Join_Type>",
+      "condition": "<Condition>",
+      "notes": "<Notes>"
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "ac_id": "<AC_ID>",
+      "description": "<Description>",
+      "check_type": "<Check_Type>",
+      "check_sql": "<Check_SQL>",
+      "expected": "<Expected>",
+      "notes": "<Notes>"
+    }
+  ],
+  "sources": [
+    {
+      "topic": "<Topic>",
+      "source_type": "<Source_Type>",
+      "reference": "<Reference>",
+      "finding": "<Finding>"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "<ID>",
+      "topic": "<Topic>",
+      "question": "<Question>",
+      "decision": "<Decision>",
+      "decided_by": "<Decided_By>",
+      "decided_on": "<Decided_On>",
+      "status": "<Status>"
+    }
+  ]
+}
+
+Allowed values: Join_Type inner|left; Check_Type unique_key|rerun_idempotent|all_source_rows_loaded|zero_rows|expected_value|guard; Source_Type sql|user|other.
+Multi-line Mapping fields (Not_For, Preconditions, Error_Handling) may be a string
+with newlines or a JSON list of strings. Row order = column order / join order.

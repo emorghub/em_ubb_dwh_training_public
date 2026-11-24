@@ -1,0 +1,8 @@
+# Needed to read/write mapping workbooks (tools/mapping_spec/)
+openpyxl>=3.1
+# Needed to render the DDL / PL/SQL / utPLSQL templates (tools/codegen/templates/)
+jinja2>=3.1
+# Needed to read/edit the analyst Word documents (business-documents/*.docx)
+python-docx>=1.2
+# Needed to run the repository test suite
+pytest>=9.2

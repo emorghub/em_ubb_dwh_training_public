@@ -1,0 +1,9 @@
+--------------------------------------------------------
+--  DDL for Index IX_LCRH_COLL
+--------------------------------------------------------
+
+  CREATE INDEX "UBB_CORE2"."IX_LCRH_COLL" ON "UBB_CORE2"."LOAN_COLLATERAL_REL_HIST" ("COLLATERAL_ID", "LOAD_ID") 
+  PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
+  STORAGE(
+  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
+  TABLESPACE "USERS"

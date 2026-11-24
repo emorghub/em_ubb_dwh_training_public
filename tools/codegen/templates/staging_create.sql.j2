@@ -1,0 +1,23 @@
+{% include "_staging_header.sql.j2" %}
+--
+-- Creates {{ table }}, which receives the delivered file {{ filename }}: one
+-- column per attribute of the agreement, plus the warehouse columns every
+-- staging table has (LOAD_ID first, STAGED_AT last). One partition per load.
+
+CREATE TABLE {{ table }} (
+    {{ "LOAD_ID" | ljust(name_width) }} NUMBER(18,0) NOT NULL,
+{% for col in columns %}
+    {{ col.name | ljust(name_width) }} {{ col.type }}{% if not col.nullable %} NOT NULL{% endif %},
+{% endfor %}
+    {{ "STAGED_AT" | ljust(name_width) }} TIMESTAMP(6) DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT {{ pk_name }} PRIMARY KEY ({{ key_columns | join(", ") }}),
+    CONSTRAINT {{ fk_name }} FOREIGN KEY (LOAD_ID) REFERENCES {{ load_table }} (LOAD_ID)
+)
+PARTITION BY LIST (LOAD_ID) AUTOMATIC (PARTITION P_LOAD_0 VALUES (0));
+
+COMMENT ON TABLE {{ table }} IS '{{ table_comment | sqlstr }}';
+{% for col in columns %}
+COMMENT ON COLUMN {{ table }}.{{ col.name }} IS '{{ col.description | sqlstr }}';
+{% endfor %}
+
+GRANT SELECT ON {{ table }} TO {{ core_schema }};

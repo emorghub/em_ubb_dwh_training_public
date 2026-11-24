@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+out/
+.env
+
+# Deployment packages (zip) built by tools/codegen/package_deployment.py
+deployment-packages/
+
+# Scratch space for skills (draft mapping JSON)
+.work/
+em_ubb_dwh_training.code-workspace
+
+# Office lock files (an open Word or Excel document)
+~$*

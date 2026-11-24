@@ -1,0 +1,40 @@
+{% include "_header.sql.j2" %}
+--
+-- Creates {{ target }} as the mapping describes it: one column per row of the
+-- workbook's Columns sheet, in that order, primary key = Business_Key.
+{% if is_scd2 %}
+-- SCD2 history table: the scd2 load adds {{ history_columns | map(attribute="name") | join(", ") }}
+-- after the mapped columns, and VALID_FROM to the primary key. VALID_TO is
+-- exclusive; {{ open_valid_to }} marks the current version. As of date D:
+--   VALID_FROM <= D AND D < VALID_TO
+{% endif %}
+-- This is the full, current definition of the table. For a table that already
+-- exists, deploy the change script <MAPPING_ID>.sql instead of this one.
+
+CREATE TABLE {{ target }} (
+{% for col in table_columns %}
+    {{ col.name | ljust(name_width) }} {{ col.type }}{% if not col.nullable %} NOT NULL{% endif %},
+{% endfor %}
+{% if is_scd2 %}
+    CONSTRAINT {{ ck_period_name }} CHECK (VALID_FROM < VALID_TO),
+{% if has_is_deleted %}
+    CONSTRAINT {{ ck_deleted_name }} CHECK (IS_DELETED IN ('Y', 'N')),
+{% endif %}
+{% endif %}
+    CONSTRAINT {{ pk_name }} PRIMARY KEY ({{ primary_key | join(", ") }})
+);
+{% if is_scd2 %}
+
+-- At most one current version per key. Only current rows are indexed: a row
+-- whose expressions are all NULL is not stored in the index.
+CREATE UNIQUE INDEX {{ target_schema }}.{{ uq_open_name }} ON {{ target }} (
+{% for k in key_columns %}
+    CASE WHEN VALID_TO = {{ open_valid_to }} THEN {{ k }} END{{ "," if not loop.last }}
+{% endfor %}
+);
+{% endif %}
+
+COMMENT ON TABLE {{ target }} IS '{{ table_description | sqlstr }}';
+{% for col in table_columns %}
+COMMENT ON COLUMN {{ target }}.{{ col.name }} IS '{{ col.comment | sqlstr }}';
+{% endfor %}

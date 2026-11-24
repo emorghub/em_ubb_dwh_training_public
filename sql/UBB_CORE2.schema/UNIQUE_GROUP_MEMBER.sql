@@ -1,0 +1,7 @@
+--------------------------------------------------------
+--  DDL for Index UNIQUE_GROUP_MEMBER
+--------------------------------------------------------
+
+  CREATE UNIQUE INDEX "UBB_CORE2"."UNIQUE_GROUP_MEMBER" ON "UBB_CORE2"."ANNOTATIONS_GROUP_MEMBERS$" ("GROUP_ID", "OBJ#", "OBJECT_OWNER", "ANNOTATION_TYPE", "COLUMN_NAME", "FUNCTION_NAME", "PROCEDURE_NAME") 
+  PCTFREE 10 INITRANS 2 MAXTRANS 255 
+  TABLESPACE "USERS"

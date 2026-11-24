@@ -1,0 +1,103 @@
+-- ===========================================================================
+-- Test data for {{ test_package }} (mapping {{ mapping_id }}).
+-- Written ONCE by tools/codegen/generate.py on {{ generated_on }} as a starting
+-- point, then owned by the developer: regenerating the tests never overwrites
+-- this file. Every TODO must be resolved before the code is handed over.
+--
+-- Needs (run by a user who may grant on the staging schema):
+{% for t in fixture_tables %}
+--   GRANT INSERT ON {{ t.qualified }} TO {{ package_schema }};
+{% endfor %}
+-- Everything seed inserts is rolled back after each test by utPLSQL.
+-- ===========================================================================
+
+CREATE OR REPLACE PACKAGE {{ package_schema }}.{{ data_package }} AS
+    -- The parameter values every test runs the load with. Pick values no real
+    -- staging data uses, so the tests do not depend on what happens to be loaded.
+{% for p in parameters %}
+    {{ p.name }} CONSTANT {{ p.decl_type }} := {{ p.test_value }};  -- TODO: confirm this test value
+{% endfor %}
+{% if is_scd2 %}
+    -- SCD2: the second load date of the history tests, later than {{ effective_param }}.
+    {{ next_date }} CONSTANT DATE := {{ effective_param }} + 1;
+{% endif %}
+
+    PROCEDURE seed;
+{% if is_scd2 %}
+
+    -- The source data as of {{ next_date }}. Only the history tests insert it.
+    PROCEDURE seed_next_date;
+{% endif %}
+{% for g in guards %}
+
+    -- Source rows that break guard {{ g.id }}. Only its test inserts them, after seed.
+    PROCEDURE {{ g.seed_proc }};
+{% endfor %}
+END {{ data_package }};
+/
+
+CREATE OR REPLACE PACKAGE BODY {{ package_schema }}.{{ data_package }} AS
+
+    PROCEDURE seed IS
+    BEGIN
+        -- TODO: the rows below are a GENERATED happy path with placeholder values:
+        --       join keys already match each other, dates use the test parameter.
+        --       Replace placeholders with realistic values (allowed values are in
+        --       the check constraints and comments of the table scripts) and add a row for each case below.
+        -- Cases the data should cover:
+{% for case in cases %}
+        --   * {{ case }}
+{% endfor %}
+{% for t in fixture_tables %}
+
+        -- {{ t.qualified }} - {{ t.role }}
+        INSERT INTO {{ t.qualified }} (
+{% for c in t.columns %}
+            {{ c.name }}{{ "," if not loop.last }}
+{% endfor %}
+        ) VALUES (
+{% for c in t.columns %}
+            {{ c.value }}{{ "," if not loop.last }}{{ "  -- " ~ c.type }}
+{% endfor %}
+        );
+{% endfor %}
+    END seed;
+{% if is_scd2 %}
+
+    PROCEDURE seed_next_date IS
+    BEGIN
+        -- TODO: the source as of {{ next_date }}, read by the same Filter as seed's data.
+        --       The rows below are a GENERATED copy of seed's happy path with the dates
+        --       moved to {{ next_date }}. Change them so the second date covers:
+{% for case in next_cases %}
+        --   * {{ case }}
+{% endfor %}
+{% for t in fixture_tables %}
+
+        -- {{ t.qualified }} - {{ t.role }}
+        INSERT INTO {{ t.qualified }} (
+{% for c in t.columns %}
+            {{ c.name }}{{ "," if not loop.last }}
+{% endfor %}
+        ) VALUES (
+{% for c in t.columns %}
+            {{ c.next_value }}{{ "," if not loop.last }}{{ "  -- " ~ c.type }}
+{% endfor %}
+        );
+{% endfor %}
+    END seed_next_date;
+{% endif %}
+{% for g in guards %}
+
+    PROCEDURE {{ g.seed_proc }} IS
+    BEGIN
+        -- TODO: insert source rows that break {{ g.id }}, on top of seed's data, so that
+        --       its Check_SQL finds them for the test parameters:
+        --         {{ g.description }}
+        --       Check_SQL: {{ g.check_sql | replace("\n", "\n        --                  ") }}
+        NULL;
+    END {{ g.seed_proc }};
+{% endfor %}
+
+END {{ data_package }};
+/

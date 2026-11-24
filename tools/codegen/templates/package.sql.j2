@@ -1,0 +1,313 @@
+{% include "_header.sql.j2" %}
+--
+-- Load package for {{ target }}.
+-- Conventions (see tools/codegen/templates/README.md to change them):
+--   * No COMMIT inside the procedure: the caller owns the transaction (the
+--     scheduler job or the developer's session commits after the call). That is also
+--     what lets the utPLSQL tests roll back everything a test did.
+--   * All or nothing: the procedure sets its own savepoint first and, on any
+--     error, rolls back to it (never the caller's earlier work) and re-raises.
+--     A failed run leaves {{ target_table }} exactly as it was - never a partial snapshot.
+--   * Every parameter is mandatory; a NULL raises ORA-20001.
+--   * Load strategy: {{ load_strategy }} - {{ strategy_summary }}
+{% if is_aggregating %}
+--   * Aggregating: the source rows are summed into one row per
+--     ({{ group_by | join(", ") }}).
+{% endif %}
+{% if guards %}
+--   * Guards ({{ guards | map(attribute="id") | join(", ") }}): checked before anything is written; one
+--     that finds source rows stops the run with ORA{{ guard_error }}{% if is_scd2 %} (every date the run
+--     loads or replays is checked first){% endif %}.
+{% endif %}
+--   * Errors are raised, not logged here: the caller logs them (for example
+--     with PKG_ETL_CONTROL.fail_run) - see tools/codegen/templates/README.md.
+{% if is_scd2 %}
+--   * History: VALID_TO is exclusive and {{ open_valid_to }} marks the current
+--     version. Every loaded date is recorded in {{ load_log }}; a run for a date on
+--     or before the latest loaded one rewinds the history to that date, loads it,
+--     then replays every later recorded date - so re-runs and late dates give the
+--     same history as loading every date once, in order. The savepoint means a
+--     failed replay cannot leave the history half rewound.
+{% endif %}
+{% macro signature() %}
+    PROCEDURE {{ procedure }}{% if parameters %} (
+{% for p in parameters %}
+        {{ p.name }} IN {{ p.plsql_type }}{{ "," if not loop.last }}
+{% endfor %}
+    ){% endif %}
+{%- endmacro %}
+{% macro column_list(indent) -%}
+{% for col in columns %}{{ indent }}{{ col.name }}{{ ",\n" if not loop.last }}{% endfor %}
+{%- endmacro %}
+{% macro key_match(left, right) -%}
+{% for k in key_columns %}{{ left }}.{{ k }} = {{ right }}.{{ k }}{{ " AND " if not loop.last }}{% endfor %}
+{%- endmacro %}
+
+CREATE OR REPLACE PACKAGE {{ package_schema }}.{{ package }} AUTHID DEFINER AS
+    -- Mapping {{ mapping_id }} (fingerprint {{ fingerprint }})
+    -- {{ intent_one_line }}
+{% if guards %}
+
+    -- Raised (ORA{{ guard_error }}) when a guard finds source rows; nothing was written.
+    e_guard_failed EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_guard_failed, {{ guard_error }});
+
+{% endif %}
+{{ signature() }};
+END {{ package }};
+/
+
+CREATE OR REPLACE PACKAGE BODY {{ package_schema }}.{{ package }} AS
+{% if is_scd2 %}
+{% set d = effective_param %}
+
+    c_open CONSTANT DATE := {{ open_valid_to }};
+
+    TYPE t_dates IS TABLE OF DATE;
+
+    -- Undo every load on or after {{ d }}: versions that start then are deleted,
+    -- the versions those loads closed are open again, and their dates leave the
+    -- load log. Exact, because a load for date D only ever closes versions at D
+    -- and adds versions from D.
+    PROCEDURE rewind({{ d }} IN DATE) IS
+        l_unlogged INTEGER;
+    BEGIN
+        -- History the log does not know about (not written by this package) cannot
+        -- be replayed, so it must not be removed.
+        SELECT COUNT(*) INTO l_unlogged
+        FROM {{ target }}
+        WHERE VALID_FROM >= {{ d }}
+          AND VALID_FROM NOT IN (SELECT EFFECTIVE_DATE FROM {{ load_log }})
+          AND ROWNUM = 1;
+        IF l_unlogged > 0 THEN
+            RAISE_APPLICATION_ERROR(-20004, '{{ procedure }}: {{ target }} has versions from '
+                || TO_CHAR({{ d }}, 'YYYY-MM-DD') || ' on that {{ load_log }} does not list, so they '
+                || 'cannot be rebuilt - add their dates to the log first');
+        END IF;
+
+        DELETE FROM {{ target }}
+        WHERE VALID_FROM >= {{ d }};
+
+        UPDATE {{ target }}
+        SET VALID_TO = c_open
+        WHERE VALID_TO >= {{ d }}
+          AND VALID_TO <> c_open;
+
+        DELETE FROM {{ load_log }}
+        WHERE EFFECTIVE_DATE >= {{ d }};
+    END rewind;
+
+    -- Load one date on top of the history before it. The source query reads the
+    -- source as of {{ d }}: the mapping's Filter or join conditions use it.
+    PROCEDURE apply_date({{ d }} IN DATE) IS
+{% if has_is_deleted %}
+        l_source_rows INTEGER;
+{% endif %}
+    BEGIN
+{% if has_is_deleted %}
+        -- An empty full snapshot would mark every key deleted: refuse it.
+        SELECT COUNT(*) INTO l_source_rows FROM (
+{{ source_query | pad(12) }}
+        )
+        WHERE ROWNUM = 1;
+        IF l_source_rows = 0 THEN
+            RAISE_APPLICATION_ERROR(-20003, '{{ procedure }}: the source has no rows for '
+                || TO_CHAR({{ d }}, 'YYYY-MM-DD') || ' - a full snapshot cannot be empty');
+        END IF;
+
+{% endif %}
+        -- 1. Close the current version of every key whose tracked values changed
+        --    (NULL-safe compare){% if has_is_deleted %}, that is back after being deleted, or that is
+        --    missing from the snapshot{% endif %}.
+        UPDATE {{ target }} t
+        SET t.VALID_TO = {{ d }}
+        WHERE t.VALID_TO = c_open
+          AND ({% if has_is_deleted %}(t.IS_DELETED = 'N' AND NOT EXISTS (
+                   SELECT 1 FROM (
+{{ source_query | pad(23) }}
+                   ) s
+                   WHERE {{ key_match("s", "t") }}
+               ))
+               OR {% endif %}EXISTS (
+                   SELECT 1 FROM (
+{{ source_query | pad(23) }}
+                   ) s
+                   WHERE {{ key_match("s", "t") }}
+                     AND ({% for col in tracked_columns %}DECODE(t.{{ col.name }}, s.{{ col.name }}, 0, 1) = 1{{ "\n                          OR " if not loop.last }}{% endfor %}{% if has_is_deleted %}
+
+                          OR t.IS_DELETED = 'Y'{% endif %})
+               ));
+
+        -- 2. A new version from {{ d }} for every source key without a current
+        --    version now: keys never seen before and the keys closed in step 1.
+        INSERT INTO {{ target }} (
+{{ column_list("            ") }},
+            VALID_FROM,
+            VALID_TO{% if has_is_deleted %},
+            IS_DELETED{% endif %}
+
+        )
+        SELECT {% for col in columns %}s.{{ col.name }}, {% endfor %}{{ d }}, c_open{% if has_is_deleted %}, 'N'{% endif %}
+
+        FROM (
+{{ source_query | pad(12) }}
+        ) s
+        WHERE NOT EXISTS (
+            SELECT 1 FROM {{ target }} t
+            WHERE {{ key_match("t", "s") }}
+              AND t.VALID_TO = c_open
+        );
+{% if has_is_deleted %}
+
+        -- 3. Keys missing from the snapshot: a deleted version from {{ d }}, a copy
+        --    of the version step 1 closed, with IS_DELETED = 'Y'.
+        INSERT INTO {{ target }} (
+{{ column_list("            ") }},
+            VALID_FROM,
+            VALID_TO,
+            IS_DELETED
+        )
+        SELECT {% for col in columns %}t.{{ col.name }}, {% endfor %}{{ d }}, c_open, 'Y'
+        FROM {{ target }} t
+        WHERE t.VALID_TO = {{ d }}
+          AND NOT EXISTS (
+              SELECT 1 FROM (
+{{ source_query | pad(18) }}
+              ) s
+              WHERE {{ key_match("s", "t") }}
+          );
+{% endif %}
+
+        INSERT INTO {{ load_log }} (EFFECTIVE_DATE) VALUES ({{ d }});
+    END apply_date;
+{% endif %}
+{% if guards %}
+
+    -- The mapping's guards: source rows that must stop the run. Checked before
+    -- anything is written, so a refused run changes nothing.
+    PROCEDURE check_guards{% if parameters %}({% for p in parameters %}{{ p.name }} IN {{ p.plsql_type }}{{ ", " if not loop.last }}{% endfor %}){% endif %} IS
+        l_violations INTEGER;
+    BEGIN
+{% for g in guards %}
+        -- {{ g.id }}: {{ g.description }}
+        SELECT COUNT(*) INTO l_violations FROM (
+            {{ g.check_sql | indent(12) }}
+        );
+        IF l_violations > 0 THEN
+            RAISE_APPLICATION_ERROR({{ guard_error }}, '{{ procedure }}: guard {{ g.id | sqlstr }} found '
+                || l_violations || ' row(s) for ' || {{ parameter_message }}
+                || ' - {{ g.description | sqlstr }}');
+        END IF;
+{% endfor %}
+    END check_guards;
+{% endif %}
+
+{{ signature() }} IS
+{% if is_scd2 %}
+        l_loaded t_dates;
+{% endif %}
+    BEGIN
+        SAVEPOINT {{ savepoint_name }};
+        DBMS_APPLICATION_INFO.SET_MODULE('{{ package }}', '{{ procedure }}');
+{% for p in parameters %}
+        IF {{ p.name }} IS NULL THEN
+            RAISE_APPLICATION_ERROR(-20001, '{{ procedure }}: {{ p.name }} must not be NULL');
+        END IF;
+{% endfor %}
+{% if guards and not is_scd2 %}
+
+        -- Refuse the source before writing anything.
+        check_guards{% if parameters %}({% for p in parameters %}{{ p.name }}{{ ", " if not loop.last }}{% endfor %}){% endif %};
+{% endif %}
+
+{% if load_strategy == "full" %}
+        -- Replace the whole table. DELETE, not TRUNCATE: TRUNCATE would commit.
+        DELETE FROM {{ target }};
+
+        INSERT INTO {{ target }} (
+{{ column_list("            ") }}
+        )
+{{ source_query_8 }};
+{% elif load_strategy == "delete_insert" %}
+        -- Replace exactly the rows this run owns, so a re-run gives the same result.
+        DELETE FROM {{ target }}
+        WHERE {{ reload_predicate }};
+
+        INSERT INTO {{ target }} (
+{{ column_list("            ") }}
+        )
+{{ source_query_8 }};
+{% elif load_strategy == "merge" %}
+        -- Update rows whose business key exists, insert the others.
+        MERGE INTO {{ target }} t
+        USING (
+{{ source_query_12 }}
+        ) s
+        ON ({% for k in key_columns %}t.{{ k }} = s.{{ k }}{{ " AND " if not loop.last }}{% endfor %})
+{% if change_columns %}
+        WHEN MATCHED THEN UPDATE SET
+{% for col in update_columns %}
+            t.{{ col.name }} = s.{{ col.name }}{{ "," if not loop.last }}
+{% endfor %}
+        -- only rows where a business value really changed (NULL-safe compare)
+        WHERE {% for col in change_columns %}DECODE(t.{{ col.name }}, s.{{ col.name }}, 0, 1) = 1{{ "\n           OR " if not loop.last }}{% endfor %}
+
+{% endif %}
+        WHEN NOT MATCHED THEN INSERT (
+{{ column_list("            ") }}
+        ) VALUES (
+{% for col in columns %}
+            s.{{ col.name }}{{ "," if not loop.last }}
+{% endfor %}
+        );
+{% elif load_strategy == "append" %}
+        -- Insert only. Running the same parameters twice fails on the primary key.
+        INSERT INTO {{ target }} (
+{{ column_list("            ") }}
+        )
+{{ source_query_8 }};
+{% elif load_strategy == "scd2" %}
+        IF {{ d }} <> TRUNC({{ d }}) OR {{ d }} >= c_open THEN
+            RAISE_APPLICATION_ERROR(-20002, '{{ procedure }}: {{ d }} must be a date without a time of day, before '
+                || TO_CHAR(c_open, 'YYYY-MM-DD'));
+        END IF;
+
+        -- Dates already loaded on or after {{ d }}: a re-run, or {{ d }} arrived late.
+        SELECT EFFECTIVE_DATE BULK COLLECT INTO l_loaded
+        FROM {{ load_log }}
+        WHERE EFFECTIVE_DATE >= {{ d }}
+        ORDER BY EFFECTIVE_DATE;
+{% if guards %}
+
+        -- Every date this run loads or replays must pass the guards before anything changes.
+        check_guards({{ d }});
+        FOR i IN 1 .. l_loaded.COUNT LOOP
+            IF l_loaded(i) > {{ d }} THEN
+                check_guards(l_loaded(i));
+            END IF;
+        END LOOP;
+{% endif %}
+
+        IF l_loaded.COUNT > 0 THEN
+            rewind({{ d }});
+        END IF;
+        apply_date({{ d }});
+        -- Replay the later dates, oldest first, on top of the corrected history.
+        FOR i IN 1 .. l_loaded.COUNT LOOP
+            IF l_loaded(i) > {{ d }} THEN
+                apply_date(l_loaded(i));
+            END IF;
+        END LOOP;
+{% endif %}
+
+        DBMS_APPLICATION_INFO.SET_MODULE(NULL, NULL);
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- Undo this run's own work only; the caller's transaction stays open.
+            ROLLBACK TO SAVEPOINT {{ savepoint_name }};
+            DBMS_APPLICATION_INFO.SET_MODULE(NULL, NULL);
+            RAISE;
+    END {{ procedure }};
+
+END {{ package }};
+/

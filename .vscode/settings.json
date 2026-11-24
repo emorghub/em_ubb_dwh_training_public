@@ -1,0 +1,35 @@
+{
+    // Copilot agent approvals for this repository. Only the repository's own tools,
+    // run in their documented form, are approved without asking. Anything else
+    // (pipes, inline scripts, deletions, other folders) still asks the person.
+    // Approving a document stays a person's act in Excel or Word.
+
+    "chat.tools.edits.autoApprove": {
+        "**/specs/**": true,
+        "**/.work/**": true
+    },
+
+    "chat.tools.terminal.autoApprove": {
+        // mapping specs
+        "/^python tools[\\\\/]mapping_spec[\\\\/]validate_spec\\.py (status|validate)$/": true,
+        "/^python tools[\\\\/]mapping_spec[\\\\/]validate_spec\\.py sql-gate( [\\w.][\\w.:\\\\/-]*)+$/": true,
+        "/^python tools[\\\\/]mapping_spec[\\\\/]mapping_workbook\\.py (schema|new \\w+)$/": true,
+        "/^python tools[\\\\/]mapping_spec[\\\\/]mapping_workbook\\.py (show|fingerprint|textconv) [\\w.][\\w.:\\\\/-]*( --json)?$/": true,
+        "/^python tools[\\\\/]mapping_spec[\\\\/]mapping_workbook\\.py write \\.work[\\\\/][\\w-][\\w.-]*\\.json$/": true,
+        "/^python tools[\\\\/]mapping_spec[\\\\/](schema_catalog|source_catalog|package_usage)\\.py( [\\w.:-]+)*( 2>&1)?$/": true,
+
+        // change requests: read-only commands
+        "/^python tools[\\\\/]change_request[\\\\/]cr\\.py (status|validate|gate|show|schema|agreement-json|glossary-json)( [\\w.:\\\\/-]+)*( 2>&1)?$/": true,
+        // change requests: writers, only from a JSON file in .work/
+        "/^python tools[\\\\/]change_request[\\\\/]cr\\.py (write|write-agreement|write-glossary) \\.work[\\\\/][\\w-][\\w.-]*\\.json( 2>&1)?$/": true,
+
+        // code generation
+        "/^python tools[\\\\/]codegen[\\\\/](verify_mapping|generate)\\.py [\\w.][\\w.:\\\\/-]*( --check)?$/": true,
+        "/^python tools[\\\\/]codegen[\\\\/]generate\\.py\\b.*--reset-test-data\\b/": false,
+
+        // tests and read-only git
+        "/^python -m pytest -q$/": true,
+        "/^git --no-pager status --short$/": true,
+        "/^git --no-pager diff( --stat)?$/": true
+    }
+}

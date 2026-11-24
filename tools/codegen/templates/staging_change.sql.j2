@@ -1,0 +1,28 @@
+{% include "_staging_header.sql.j2" %}
+--
+-- Brings the existing {{ table }} in line with the agreement. Written by
+-- comparing the agreement with the table script in sql/ on {{ generated_on }}.
+-- New columns are nullable: the rows already loaded have no value for them.
+{% if columns %}
+
+ALTER TABLE {{ table }} ADD (
+{% for col in columns %}
+    {{ col.name | ljust(name_width) }} {{ col.type }}{{ "," if not loop.last }}
+{% endfor %}
+);
+{% for col in columns %}
+COMMENT ON COLUMN {{ table }}.{{ col.name }} IS '{{ col.description | sqlstr }}';
+{% endfor %}
+{% else %}
+
+-- No executable change: the table already has every attribute.
+{% endif %}
+{% if manual_notes %}
+
+-- ---------------------------------------------------------------------------
+-- MANUAL DECISIONS NEEDED - nothing below is executed by this script:
+{% for note in manual_notes %}
+--   * {{ note }}
+{% endfor %}
+-- ---------------------------------------------------------------------------
+{% endif %}

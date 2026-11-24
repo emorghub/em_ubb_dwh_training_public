@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 950" width="1600" height="950" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#374151"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="950" fill="#ffffff"/>
+  <text x="20" y="30" font-size="22" font-weight="700" fill="#111827">UBB DWH - from a change request to a tested load (six skills, a person approves after each document)</text>
+
+  <!-- lanes -->
+  <rect x="10" y="50" width="1580" height="580" rx="10" fill="#f0f7ff" stroke="#bfdbfe"/>
+  <text x="22" y="70" font-size="13" font-weight="700" fill="#1d4ed8">ANALYST</text>
+  <rect x="10" y="645" width="1580" height="235" rx="10" fill="#f0fdf4" stroke="#bbf7d0"/>
+  <text x="22" y="665" font-size="13" font-weight="700" fill="#15803d">DEVELOPER</text>
+
+  <!-- row 1 -->
+  <rect x="20" y="90" width="170" height="80" rx="8" fill="#ffffff" stroke="#6b7280"/>
+  <text x="105" y="125" font-size="14" font-weight="700" text-anchor="middle" fill="#111827">Change request</text>
+  <text x="105" y="145" font-size="12" text-anchor="middle" fill="#4b5563">business-documents/*.docx</text>
+
+  <rect x="230" y="90" width="270" height="80" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="365" y="115" font-size="14" font-weight="700" text-anchor="middle" fill="#1e3a8a">1 · /ba-1-analyse-requirement</text>
+  <text x="365" y="136" font-size="12" text-anchor="middle" fill="#1f2937">Writes: CR_Requirements.xlsx</text>
+  <text x="365" y="154" font-size="12" text-anchor="middle" fill="#1f2937">KPIs, rules, required inputs</text>
+
+  <polygon points="545,102 573,130 545,158 517,130" fill="#fde68a" stroke="#d97706"/>
+  <text x="545" y="134" font-size="10" font-weight="700" text-anchor="middle" fill="#92400e">approve</text>
+
+  <rect x="590" y="90" width="290" height="80" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="735" y="115" font-size="14" font-weight="700" text-anchor="middle" fill="#1e3a8a">2 · /ba-2-analyse-data-gaps</text>
+  <text x="735" y="136" font-size="12" text-anchor="middle" fill="#1f2937">Writes: CR_Gap_Analysis.xlsx</text>
+  <text x="735" y="154" font-size="12" text-anchor="middle" fill="#1f2937">where each input is + Load_Plan</text>
+
+  <polygon points="935,102 963,130 935,158 907,130" fill="#fde68a" stroke="#d97706"/>
+  <text x="935" y="134" font-size="10" font-weight="700" text-anchor="middle" fill="#92400e">approve</text>
+
+  <path d="M190,130 H230" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M500,130 H517" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M573,130 H590" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M880,130 H907" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- small request without a CR -->
+  <rect x="1100" y="90" width="300" height="80" rx="8" fill="#ffffff" stroke="#6b7280" stroke-dasharray="6 4"/>
+  <text x="1250" y="122" font-size="14" font-weight="700" text-anchor="middle" fill="#111827">Small request, no CR</text>
+  <text x="1250" y="142" font-size="12" text-anchor="middle" fill="#4b5563">chat, ticket, or change to an</text>
+  <text x="1250" y="158" font-size="12" text-anchor="middle" fill="#4b5563">existing mapping - starts at step 4</text>
+  <path d="M1100,130 H1057 V515 H1046" stroke="#6b7280" stroke-width="1.8" stroke-dasharray="6 4" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- hub -->
+  <path d="M935,158 V197 H790 V235" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <rect x="640" y="235" width="300" height="65" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="790" y="262" font-size="14" font-weight="700" text-anchor="middle" fill="#9a3412">Where is each input?</text>
+  <text x="790" y="282" font-size="12" text-anchor="middle" fill="#7c2d12">gap level per input (and: glossary changes?)</text>
+
+  <path d="M790,300 V320 M140,320 H1450" stroke="#374151" stroke-width="1.8" fill="none"/>
+  <path d="M140,320 V345" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M402,320 V345" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M664,320 V345" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M926,320 V345" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M1188,320 V345" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M1450,320 V345" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- branch outcomes -->
+  <rect x="20" y="345" width="240" height="65" rx="8" fill="#f3f4f6" stroke="#6b7280"/>
+  <text x="140" y="368" font-size="13" font-weight="700" text-anchor="middle" fill="#111827">in_interface</text>
+  <text x="140" y="386" font-size="12" text-anchor="middle" fill="#374151">Agreement delivers it,</text>
+  <text x="140" y="401" font-size="12" text-anchor="middle" fill="#374151">staging lacks the column</text>
+
+  <rect x="282" y="345" width="240" height="65" rx="8" fill="#f3f4f6" stroke="#6b7280"/>
+  <text x="402" y="368" font-size="13" font-weight="700" text-anchor="middle" fill="#111827">in_source</text>
+  <text x="402" y="386" font-size="12" text-anchor="middle" fill="#374151">Source system has it,</text>
+  <text x="402" y="401" font-size="12" text-anchor="middle" fill="#374151">the agreement lacks it</text>
+
+  <rect x="544" y="345" width="240" height="65" rx="8" fill="#f3f4f6" stroke="#6b7280"/>
+  <text x="664" y="368" font-size="13" font-weight="700" text-anchor="middle" fill="#111827">Glossary changes</text>
+  <text x="664" y="386" font-size="12" text-anchor="middle" fill="#374151">proposed in the requirements</text>
+  <text x="664" y="401" font-size="12" text-anchor="middle" fill="#374151">(decided in step 1)</text>
+
+  <rect x="806" y="345" width="240" height="65" rx="8" fill="#f3f4f6" stroke="#6b7280"/>
+  <text x="926" y="368" font-size="13" font-weight="700" text-anchor="middle" fill="#111827">in_core / in_staging</text>
+  <text x="926" y="386" font-size="12" text-anchor="middle" fill="#374151">Data is already in the</text>
+  <text x="926" y="401" font-size="12" text-anchor="middle" fill="#374151">warehouse - needs a load</text>
+
+  <rect x="1068" y="345" width="240" height="65" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-dasharray="6 4"/>
+  <text x="1188" y="368" font-size="13" font-weight="700" text-anchor="middle" fill="#991b1b">not_in_source</text>
+  <text x="1188" y="386" font-size="12" text-anchor="middle" fill="#7f1d1d">No source system has it</text>
+
+  <rect x="1330" y="345" width="240" height="65" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-dasharray="6 4"/>
+  <text x="1450" y="368" font-size="13" font-weight="700" text-anchor="middle" fill="#991b1b">conflict</text>
+  <text x="1450" y="386" font-size="12" text-anchor="middle" fill="#7f1d1d">The documents disagree</text>
+
+  <!-- what follows -->
+  <path d="M402,410 V470" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M664,410 V470" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M926,410 V470" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M1188,410 V470" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="6 4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M1450,410 V470" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="6 4" fill="none" marker-end="url(#arrow)"/>
+  <path d="M140,410 V680" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="282" y="470" width="502" height="100" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="533" y="494" font-size="14" font-weight="700" text-anchor="middle" fill="#1e3a8a">3 · /ba-3-specify-baseline-changes</text>
+  <text x="533" y="514" font-size="12" text-anchor="middle" fill="#1f2937">Writes: new delivery agreement version (.docx) per source that must deliver more</text>
+  <text x="533" y="531" font-size="12" text-anchor="middle" fill="#1f2937">and a new glossary version (.xlsx) when changes are proposed</text>
+  <text x="533" y="552" font-size="12" text-anchor="middle" fill="#4b5563">Approved by: analyst + source owner (agreement), glossary owner (glossary)</text>
+
+  <rect x="806" y="470" width="240" height="100" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="926" y="494" font-size="14" font-weight="700" text-anchor="middle" fill="#1e3a8a">4 · /ba-4-create-mapping-spec</text>
+  <text x="926" y="514" font-size="12" text-anchor="middle" fill="#1f2937">Writes: specs/&lt;folder&gt;/&lt;ID&gt;.xlsx</text>
+  <text x="926" y="531" font-size="12" text-anchor="middle" fill="#1f2937">one run per Load_Plan row,</text>
+  <text x="926" y="548" font-size="12" text-anchor="middle" fill="#1f2937">in plan order</text>
+  <path d="M784,520 H806" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="1068" y="470" width="240" height="100" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-dasharray="6 4"/>
+  <text x="1188" y="505" font-size="13" font-weight="700" text-anchor="middle" fill="#991b1b">Analyst takes it to the</text>
+  <text x="1188" y="522" font-size="13" font-weight="700" text-anchor="middle" fill="#991b1b">source owner</text>
+  <text x="1188" y="545" font-size="12" text-anchor="middle" fill="#7f1d1d">no skill; only recorded</text>
+
+  <rect x="1330" y="470" width="240" height="100" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-dasharray="6 4"/>
+  <text x="1450" y="505" font-size="13" font-weight="700" text-anchor="middle" fill="#991b1b">Owner of the wrong</text>
+  <text x="1450" y="522" font-size="13" font-weight="700" text-anchor="middle" fill="#991b1b">document corrects it</text>
+  <text x="1450" y="545" font-size="12" text-anchor="middle" fill="#7f1d1d">then the step is re-run</text>
+
+  <!-- approvals towards the developer lane -->
+  <path d="M330,570 V598 M926,570 V598" stroke="#374151" stroke-width="1.8" fill="none"/>
+  <polygon points="330,598 354,622 330,646 306,622" fill="#fde68a" stroke="#d97706"/>
+  <text x="330" y="626" font-size="10" font-weight="700" text-anchor="middle" fill="#92400e">approve</text>
+  <polygon points="926,598 950,622 926,646 902,622" fill="#fde68a" stroke="#d97706"/>
+  <text x="926" y="626" font-size="10" font-weight="700" text-anchor="middle" fill="#92400e">approve</text>
+  <path d="M330,646 V680" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M926,646 V680" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- developer lane -->
+  <rect x="60" y="680" width="320" height="90" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="220" y="706" font-size="14" font-weight="700" text-anchor="middle" fill="#14532d">5 · /dev-1-implement-staging-change</text>
+  <text x="220" y="728" font-size="12" text-anchor="middle" fill="#1f2937">Writes: staging/STG_*.sql</text>
+  <text x="220" y="746" font-size="12" text-anchor="middle" fill="#1f2937">ALTER TABLE or CREATE TABLE in staging</text>
+
+  <rect x="780" y="680" width="320" height="90" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="940" y="706" font-size="14" font-weight="700" text-anchor="middle" fill="#14532d">6 · /dev-2-implement-mapping</text>
+  <text x="940" y="728" font-size="12" text-anchor="middle" fill="#1f2937">Writes: table DDL, PL/SQL package,</text>
+  <text x="940" y="746" font-size="12" text-anchor="middle" fill="#1f2937">utPLSQL tests (next to the workbook)</text>
+
+  <path d="M380,725 H780" stroke="#16a34a" stroke-width="1.8" stroke-dasharray="6 4" fill="none" marker-end="url(#arrow)"/>
+  <text x="580" y="716" font-size="12" text-anchor="middle" fill="#15803d">staging deployed first (new columns)</text>
+
+  <rect x="60" y="800" width="320" height="40" rx="20" fill="#ffffff" stroke="#16a34a"/>
+  <text x="220" y="825" font-size="12" font-weight="700" text-anchor="middle" fill="#14532d">Developer reviews and deploys by hand</text>
+  <rect x="780" y="800" width="320" height="40" rx="20" fill="#ffffff" stroke="#16a34a"/>
+  <text x="940" y="825" font-size="12" font-weight="700" text-anchor="middle" fill="#14532d">Developer reviews and deploys by hand</text>
+  <path d="M220,770 V800" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+  <path d="M940,770 V800" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+
+  <rect x="1180" y="790" width="300" height="60" rx="8" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="1330" y="816" font-size="14" font-weight="700" text-anchor="middle" fill="#14532d">Tested load in UBB_CORE2</text>
+  <text x="1330" y="835" font-size="12" text-anchor="middle" fill="#4b5563">utPLSQL tests run after deployment</text>
+  <path d="M1100,820 H1180" stroke="#374151" stroke-width="1.8" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- legend -->
+  <rect x="20" y="896" width="22" height="14" rx="3" fill="#dbeafe" stroke="#2563eb"/>
+  <text x="48" y="908" font-size="12" fill="#374151">analyst skill</text>
+  <rect x="140" y="896" width="22" height="14" rx="3" fill="#dcfce7" stroke="#16a34a"/>
+  <text x="168" y="908" font-size="12" fill="#374151">developer skill</text>
+  <polygon points="275,896 286,903 275,910 264,903" fill="#fde68a" stroke="#d97706"/>
+  <text x="294" y="908" font-size="12" fill="#374151">a named person approves the document (Excel / Word)</text>
+  <rect x="660" y="896" width="22" height="14" rx="3" fill="#fef2f2" stroke="#dc2626" stroke-dasharray="3 2"/>
+  <text x="688" y="908" font-size="12" fill="#374151">no skill follows; handled by people</text>
+  <text x="20" y="935" font-size="12" fill="#4b5563">No skill ever approves a document, deploys a script, or connects to a database. Table and column facts come only from the sql/ folder.</text>
+</svg>

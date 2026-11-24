@@ -1,0 +1,132 @@
+--------------------------------------------------------
+--  DDL for Package Body PKG_ETL_PARTNER
+--------------------------------------------------------
+
+  CREATE OR REPLACE EDITIONABLE PACKAGE BODY "UBB_CORE2"."PKG_ETL_PARTNER" AS
+ PROCEDURE load_day(p_business_date IN DATE) IS
+  v_load_id NUMBER(18);
+  v_run_id NUMBER(18);
+  v_rows_read NUMBER := 0;
+  v_rows_written NUMBER := 0;
+  v_n NUMBER;
+  v_new NUMBER;
+  v_changed NUMBER;
+  v_committed BOOLEAN := FALSE;
+  v_error VARCHAR2(4000);
+ BEGIN
+  IF p_business_date IS NULL OR p_business_date <> TRUNC(p_business_date) THEN
+   RAISE_APPLICATION_ERROR(-20100,'Business date must be midnight');
+  END IF;
+  v_load_id := UBB_CORE2.PKG_ETL_CONTROL.find_source_load('CRM_SIM','PARTNER',p_business_date);
+  UBB_CORE2.PKG_ETL_CONTROL.start_run('LOAD_PARTNER',p_business_date,v_load_id,v_run_id);
+
+  -- GTT is private to the session; never TRUNCATE inside the business transaction.
+  DELETE FROM UBB_CORE2.GTT_PARTNER_SCD2;
+  SELECT COUNT(*) INTO v_rows_read FROM UBB_STAGING2.STG_PARTNER WHERE LOAD_ID=v_load_id;
+  IF v_rows_read=0 THEN
+   RAISE_APPLICATION_ERROR(-20101,'Empty partner snapshot');
+  END IF;
+  SELECT COUNT(*) INTO v_n FROM (
+   SELECT CRM_PARTNER_REF FROM UBB_STAGING2.STG_PARTNER
+   WHERE LOAD_ID=v_load_id GROUP BY CRM_PARTNER_REF HAVING COUNT(*)>1
+  );
+  IF v_n>0 THEN RAISE_APPLICATION_ERROR(-20102,'Duplicate CRM_PARTNER_REF in snapshot'); END IF;
+  SELECT COUNT(*) INTO v_n FROM UBB_STAGING2.STG_PARTNER
+   WHERE LOAD_ID=v_load_id AND (CRM_PARTNER_REF IS NULL OR PARTNER_NAME IS NULL
+       OR PARTNER_TYPE IS NULL OR PARTNER_TYPE NOT IN ('PERSON','COMPANY'));
+  IF v_n>0 THEN RAISE_APPLICATION_ERROR(-20103,'Missing or invalid mandatory partner data'); END IF;
+
+  -- Strict chronological processing across all CRM partner versions.
+  SELECT COUNT(*) INTO v_n FROM UBB_CORE2.PARTNER_HIST h
+    JOIN UBB_CORE2.PARTNER p ON p.PARTNER_ID=h.PARTNER_ID
+   WHERE p.SOURCE_SYSTEM='CRM_SIM' AND h.VALID_FROM>p_business_date;
+  IF v_n>0 THEN RAISE_APPLICATION_ERROR(-20104,'Later SCD2 versions exist: backfill unsupported'); END IF;
+
+  MERGE INTO UBB_CORE2.PARTNER p
+  USING (SELECT DISTINCT CRM_PARTNER_REF FROM UBB_STAGING2.STG_PARTNER
+         WHERE LOAD_ID=v_load_id) s
+  ON (p.SOURCE_SYSTEM='CRM_SIM' AND p.PARTNER_REF=s.CRM_PARTNER_REF)
+  WHEN NOT MATCHED THEN INSERT (PARTNER_ID,SOURCE_SYSTEM,PARTNER_REF)
+   VALUES (UBB_CORE2.SEQ_PARTNER.NEXTVAL,'CRM_SIM',s.CRM_PARTNER_REF);
+  v_rows_written := v_rows_written + SQL%ROWCOUNT;
+
+  -- Freeze the change classification BEFORE closing current versions.
+  INSERT INTO UBB_CORE2.GTT_PARTNER_SCD2
+   (PARTNER_ID,CRM_PARTNER_REF,CBS_PARTNER_REF,PARTNER_NAME,PARTNER_TYPE,
+    CUSTOMER_SEGMENT,RISK_RATING,RESIDENCY_COUNTRY,PARTNER_STATUS,CHANGE_ACTION)
+  SELECT p.PARTNER_ID,s.CRM_PARTNER_REF,s.CBS_PARTNER_REF,s.PARTNER_NAME,s.PARTNER_TYPE,
+         s.CUSTOMER_SEGMENT,s.RISK_RATING,s.RESIDENCY_COUNTRY,s.PARTNER_STATUS,
+         CASE WHEN h.PARTNER_ID IS NULL THEN 'NEW'
+              WHEN DECODE(h.CBS_PARTNER_REF,s.CBS_PARTNER_REF,0,1)=1
+                OR DECODE(h.PARTNER_NAME,s.PARTNER_NAME,0,1)=1
+                OR DECODE(h.PARTNER_TYPE,s.PARTNER_TYPE,0,1)=1
+                OR DECODE(h.CUSTOMER_SEGMENT,s.CUSTOMER_SEGMENT,0,1)=1
+                OR DECODE(h.RISK_RATING,s.RISK_RATING,0,1)=1
+                OR DECODE(h.RESIDENCY_COUNTRY,s.RESIDENCY_COUNTRY,0,1)=1
+                OR DECODE(h.PARTNER_STATUS,s.PARTNER_STATUS,0,1)=1
+              THEN 'CHANGED' ELSE 'UNCHANGED' END
+  FROM UBB_STAGING2.STG_PARTNER s
+  JOIN UBB_CORE2.PARTNER p
+    ON p.SOURCE_SYSTEM='CRM_SIM' AND p.PARTNER_REF=s.CRM_PARTNER_REF
+  LEFT JOIN UBB_CORE2.PARTNER_HIST h
+    ON h.PARTNER_ID=p.PARTNER_ID AND h.IS_CURRENT='Y'
+  WHERE s.LOAD_ID=v_load_id;
+
+  -- If a same-day version already exists, it must match exactly.
+  SELECT COUNT(*) INTO v_n
+  FROM UBB_CORE2.GTT_PARTNER_SCD2 c
+  JOIN UBB_CORE2.PARTNER_HIST h ON h.PARTNER_ID=c.PARTNER_ID
+  WHERE h.VALID_FROM=p_business_date AND c.CHANGE_ACTION<>'UNCHANGED';
+  IF v_n>0 THEN RAISE_APPLICATION_ERROR(-20105,'Conflicting same-day rerun'); END IF;
+
+  -- Detect broken history: existing history but no current row.
+  SELECT COUNT(*) INTO v_n FROM UBB_CORE2.GTT_PARTNER_SCD2 c
+  WHERE c.CHANGE_ACTION='NEW' AND EXISTS
+    (SELECT 1 FROM UBB_CORE2.PARTNER_HIST h WHERE h.PARTNER_ID=c.PARTNER_ID);
+  IF v_n>0 THEN RAISE_APPLICATION_ERROR(-20106,'History without current version'); END IF;
+
+  SELECT COUNT(*) INTO v_new FROM UBB_CORE2.GTT_PARTNER_SCD2 WHERE CHANGE_ACTION='NEW';
+  SELECT COUNT(*) INTO v_changed FROM UBB_CORE2.GTT_PARTNER_SCD2 WHERE CHANGE_ACTION='CHANGED';
+
+  UPDATE UBB_CORE2.PARTNER_HIST h
+     SET VALID_TO=p_business_date,IS_CURRENT='N'
+   WHERE h.IS_CURRENT='Y' AND h.VALID_FROM<p_business_date
+     AND EXISTS (SELECT 1 FROM UBB_CORE2.GTT_PARTNER_SCD2 c
+                  WHERE c.PARTNER_ID=h.PARTNER_ID AND c.CHANGE_ACTION='CHANGED');
+  IF SQL%ROWCOUNT<>v_changed THEN
+   RAISE_APPLICATION_ERROR(-20107,'Closed-version count mismatch');
+  END IF;
+  v_rows_written := v_rows_written + SQL%ROWCOUNT;
+
+  INSERT INTO UBB_CORE2.PARTNER_HIST
+   (PARTNER_ID,VALID_FROM,VALID_TO,IS_CURRENT,PARTNER_NAME,PARTNER_TYPE,
+    CUSTOMER_SEGMENT,RISK_RATING,RESIDENCY_COUNTRY,PARTNER_STATUS,CBS_PARTNER_REF,LOAD_ID)
+  SELECT c.PARTNER_ID,p_business_date,DATE '9999-12-31','Y',c.PARTNER_NAME,c.PARTNER_TYPE,
+         c.CUSTOMER_SEGMENT,c.RISK_RATING,c.RESIDENCY_COUNTRY,c.PARTNER_STATUS,
+         c.CBS_PARTNER_REF,v_load_id
+  FROM UBB_CORE2.GTT_PARTNER_SCD2 c
+  WHERE c.CHANGE_ACTION IN ('NEW','CHANGED');
+  IF SQL%ROWCOUNT<>v_new+v_changed THEN
+   RAISE_APPLICATION_ERROR(-20108,'Inserted-version count mismatch');
+  END IF;
+  v_rows_written := v_rows_written + SQL%ROWCOUNT;
+
+  -- Business DML must commit BEFORE autonomous control completion.
+  COMMIT;
+  v_committed := TRUE;
+  UBB_CORE2.PKG_ETL_CONTROL.complete_run(v_run_id,v_rows_read,v_rows_written);
+  DELETE FROM UBB_CORE2.GTT_PARTNER_SCD2;
+  COMMIT;
+  DBMS_OUTPUT.PUT_LINE('PARTNER '||TO_CHAR(p_business_date,'YYYY-MM-DD')||
+    ': read='||v_rows_read||', new='||v_new||', changed='||v_changed||
+    ', business writes='||v_rows_written||', run='||v_run_id);
+ EXCEPTION WHEN OTHERS THEN
+  v_error := SUBSTR(SQLERRM,1,4000);
+  IF NOT v_committed THEN ROLLBACK; END IF;
+  IF v_run_id IS NOT NULL THEN
+   BEGIN UBB_CORE2.PKG_ETL_CONTROL.fail_run(v_run_id,v_error);
+   EXCEPTION WHEN OTHERS THEN NULL; END;
+  END IF;
+  RAISE;
+ END load_day;
+END PKG_ETL_PARTNER;
