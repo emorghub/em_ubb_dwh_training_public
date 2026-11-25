@@ -8,3 +8,4 @@
 ## Drinks
 
 - Water
+- Beer
