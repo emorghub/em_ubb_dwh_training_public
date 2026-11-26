@@ -3,3 +3,6 @@
 - Maria
 - Ivan
 - Elena
+- Boris
+- Peter
+- Geri
