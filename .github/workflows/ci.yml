@@ -1,0 +1,63 @@
+name: CI
+
+# Runs after every push to any branch, and when a pull request is opened,
+# updated or reopened. No job opens a database connection: everything reads
+# the files in this repository only.
+on:
+  push:
+  pull_request:
+
+# A newer run for the same branch or pull request replaces an older, still
+# running one, so a quick series of commits does not queue up old runs.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  tests:
+    name: Tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pytest -q
+
+  validate:
+    name: Validate mappings and change requests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: Validate mapping workbooks
+        run: python tools/mapping_spec/validate_spec.py validate
+      - name: Validate change requests
+        run: python tools/change_request/cr.py validate
+
+  skills-in-step:
+    name: Claude and Copilot skill copies match
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      # The Copilot skills must be an exact copy of the Claude skills. The
+      # same checks also run inside the full test job; this job gives a
+      # failure in the skill copies its own clearly named check.
+      - run: python -m pytest -q tests/test_skills.py
