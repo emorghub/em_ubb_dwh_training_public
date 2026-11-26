@@ -57,7 +57,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
       - run: python -m pip install -r requirements.txt
-      # .github/skills/ must be an exact copy of .claude/skills/. The same
-      # checks also run inside the full test job; this job gives a failure
-      # in the skill copies its own clearly named check.
+      # The Copilot skills must be an exact copy of the Claude skills. The
+      # same checks also run inside the full test job; this job gives a
+      # failure in the skill copies its own clearly named check.
       - run: python -m pytest -q tests/test_skills.py
