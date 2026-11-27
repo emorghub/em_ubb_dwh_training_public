@@ -81,7 +81,9 @@ Everything about content, file layout and the checks is in
   `tools/codegen/templates/preflight_helpers.sql`. Paste its helper block
   unchanged and write only the mapping's own checks; never rewrite a helper.
   `package_deployment.py` refuses a preflight script that does not carry the
-  block unchanged.
+  block unchanged. The script's own variables (for example the business date)
+  are declared right after `DECLARE`, before the helper block: PL/SQL does not
+  allow a variable after a procedure or function.
 
 - Everything comes from the workbook, the generated files, `verify_mapping.py`,
   the change request and the scripts in `sql/` - never from a database and

@@ -1,11 +1,13 @@
 -- ===========================================================================
 -- Preflight helper block. NOT a script of its own: dev-3-prepare-deployment
 -- pastes the part between the two "BEGIN HELPERS" / "END HELPERS" lines,
--- unchanged, into both DEPLOY_<MAPPING_ID>_PREFLIGHT_*.sql scripts, after the
--- DECLARE of the script and any variables of its own (for example the
--- business date of preflight 2), and writes only the mapping's checks after
--- the BEGIN. Nothing here names a mapping, a table or a column: those come
--- from the workbook, never from this file.
+-- unchanged, into both DEPLOY_<MAPPING_ID>_PREFLIGHT_*.sql scripts, right
+-- after the DECLARE of the script and after any variables of its own (for
+-- example the business date of preflight 2): PL/SQL needs every variable
+-- declared before the first procedure or function, so the script's own
+-- variables come BEFORE this block, never after it. The mapping's checks
+-- are written after the BEGIN. Nothing here names a mapping, a table or a
+-- column: those come from the workbook, never from this file.
 --
 -- READ ONLY: every helper only reads the data dictionary (ALL_*) or runs the
 -- SELECT it is given. No DDL, no DML, no GRANT, no COMMIT.
@@ -25,6 +27,7 @@
 --   WHENEVER SQLERROR EXIT FAILURE
 --   DEFINE p_env = '&1'            -- preflight 2: DEFINE p_business_date = '&1' and p_env = '&2'
 --   DECLARE
+--       <the script's own variables, if any: they must come before the helpers>
 --       <helpers, as below>
 --   BEGIN
 --       IF g_env NOT IN ('TEST', 'PROD') THEN

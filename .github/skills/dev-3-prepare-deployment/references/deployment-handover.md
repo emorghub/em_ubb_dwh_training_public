@@ -178,8 +178,11 @@ change to a helper is a change to that file:
 | `has_grant(id, owner, table, privilege)` | A direct grant to the current schema in `ALL_TAB_PRIVS` |
 | `object_state(id, owner, name, type)` | Preflight 1 only: status and `LAST_DDL_TIME` for the rollback notes |
 
-Skeleton of a script (the helper block goes right after `DECLARE`, followed by
-any variable of the script itself; the checks go where it says; the same
+Skeleton of a script (the script's own variables, such as the business date of
+preflight 2, go right after `DECLARE`, **before** the helper block: PL/SQL
+requires every variable to be declared before the first procedure or function,
+so a variable placed after the helpers does not compile (PLS-00103); the
+helper block follows unchanged; the checks go where it says; the same
 skeleton is at the top of the helper file):
 
 ```sql
@@ -189,7 +192,8 @@ SET DEFINE ON
 WHENEVER SQLERROR EXIT FAILURE
 DEFINE p_env = '&1'
 DECLARE
-    -- the helper block of tools/codegen/templates/preflight_helpers.sql, unchanged
+    -- variables of the script itself first (none in preflight 1 unless a check needs one)
+    -- then the helper block of tools/codegen/templates/preflight_helpers.sql, unchanged
 BEGIN
     IF g_env NOT IN ('TEST', 'PROD') THEN
         report('FAIL', 'P', 'the environment parameter is TEST or PROD', 'got ' || NVL(g_env, 'nothing'));
