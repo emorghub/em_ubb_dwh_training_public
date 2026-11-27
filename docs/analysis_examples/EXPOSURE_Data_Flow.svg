@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2627" height="1488" viewBox="0 0 2627 1488" role="img" aria-labelledby="t d">
+<title id="t">UBB_CORE2.PKG_ETL_EXPOSURE</title>
+<desc id="d">Data lineage. pLoan to LOAN_HIST (LOAD_ID filter; L245 lh.LOAD_ID = p_loan_load_id). pColl to LOAN_COLLATERAL_REL_HIST (LOAD_ID filter; L265 lcr.LOAD_ID = p_collateral_load_id). pFx to FX_RATE (LOAD_ID filter; L260 fx.LOAD_ID = p_fx_load_id). pDate to FX_RATE (RATE_DATE filter; L261 fx.RATE_DATE = p_business_date). LOAN to MERGE (LOAN_REF; L206-L208 JOIN LOAN on LOAN_ID, SOURCE_SYSTEM = 'CBS_SIM'). LOAN_HIST to MERGE (source rows; L203-L210 MERGE source reads LOAN_HIST). LOAN_HIST to loan_snapshot (snapshot rows; L237-L246 loan_snapshot reads LOAN_HIST). LOAN_COLLATERAL_REL_HIST to collateral_by_loan (active rows; L256-L266 active allocations of the collateral load). FX_RATE to collateral_by_loan (rates; L259-L264 LEFT JOIN FX_RATE on the currency pair). loan_snapshot to collateral_by_loan (LOAN_ID, currency; L257-L258 JOIN loan_snapshot on LOAN_ID). MERGE to EXPOSURE (new identities; L202-L219 MERGE INTO EXPOSURE, WHEN NOT MATCHED INSERT). EXPOSURE to projection (EXPOSURE_ID; L286-L287 JOIN EXPOSURE on LOAN_ID). loan_snapshot to projection (loan fields; L285 FROM loan_snapshot ls). collateral_by_loan to projection (eligible amount; L288-L289 LEFT JOIN collateral_by_loan on LOAN_ID). projection to EXPOSURE_HIST (INSERT; L223-L236, L269-L284 INSERT INTO EXPOSURE_HIST SELECT). pExp to projection (LOAD_ID value; L270 p_exposure_load_id is selected as LOAD_ID). EXPOSURE_HIST to CTRL_LOAD (row count; L291, L295-L301 UPDATE CTRL_LOAD with the counts).</desc>
+<defs>
+<marker id="m-0A50FF" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#0A50FF"/></marker>
+<marker id="m-12A56D" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#12A56D"/></marker>
+<marker id="m-7A8594" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#7A8594"/></marker>
+<marker id="m-A34929" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#A34929"/></marker>
+<marker id="m-A39300" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#A39300"/></marker>
+<marker id="m-D04BD2" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#D04BD2"/></marker>
+</defs>
+<rect width="2627" height="1488" fill="#F8FAFC"/>
+<text data-role="title" x="1314" y="40" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#0F172A">UBB_CORE2.PKG_ETL_EXPOSURE</text>
+<g class="legend"><rect x="40" y="62" width="2547" height="52" rx="10" fill="#FFFFFF" stroke="#CBD5E1"/>
+<g data-legend-flow="loan_hist" data-legend-color="#0A50FF" data-legend-style="data"><path d="M64 88 L118 88" stroke="#0A50FF" stroke-width="2.4" fill="none" marker-end="url(#m-0A50FF)"/><text x="128" y="93" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAN_HIST rows</text></g>
+<g data-legend-flow="loan" data-legend-color="#12A56D" data-legend-style="data"><path d="M274 88 L328 88" stroke="#12A56D" stroke-width="2.4" fill="none" marker-end="url(#m-12A56D)"/><text x="338" y="93" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAN rows</text></g>
+<g data-legend-flow="coll" data-legend-color="#A34929" data-legend-style="data"><path d="M444 88 L498 88" stroke="#A34929" stroke-width="2.4" fill="none" marker-end="url(#m-A34929)"/><text x="508" y="93" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Collateral allocation rows</text></g>
+<g data-legend-flow="fx" data-legend-color="#D04BD2" data-legend-style="data"><path d="M700 88 L754 88" stroke="#D04BD2" stroke-width="2.4" fill="none" marker-end="url(#m-D04BD2)"/><text x="764" y="93" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">FX rate rows</text></g>
+<g data-legend-flow="derived" data-legend-color="#A39300" data-legend-style="data"><path d="M879 88 L933 88" stroke="#A39300" stroke-width="2.4" fill="none" marker-end="url(#m-A39300)"/><text x="943" y="93" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Derived rows after a join</text></g>
+<g data-legend-flow="control" data-legend-color="#7A8594" data-legend-style="control"><path d="M1131 88 L1185 88" stroke="#7A8594" stroke-width="2.4" fill="none" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#m-7A8594)"/><text x="1195" y="93" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Control / parameter</text></g>
+</g>
+<g class="node" data-node="pLoan" data-kind="control"><rect x="40" y="387" width="171" height="46" rx="12" fill="#F2F3F4" stroke="#7A8594" stroke-width="2"/><text x="58" y="415" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#434951">p_loan_load_id</text>
+</g>
+<g class="node" data-node="pColl" data-kind="control"><rect x="40" y="597" width="215" height="46" rx="12" fill="#F2F3F4" stroke="#7A8594" stroke-width="2"/><text x="58" y="625" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#434951">p_collateral_load_id</text>
+</g>
+<g class="node" data-node="pFx" data-kind="control"><rect x="40" y="791" width="150" height="46" rx="12" fill="#F2F3F4" stroke="#7A8594" stroke-width="2"/><text x="58" y="819" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#434951">p_fx_load_id</text>
+</g>
+<g class="node" data-node="pDate" data-kind="control"><rect x="40" y="877" width="187" height="46" rx="12" fill="#F2F3F4" stroke="#7A8594" stroke-width="2"/><text x="58" y="905" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#434951">p_business_date</text>
+</g>
+<g class="node" data-node="LOAN" data-kind="source"><rect x="405" y="170" width="292" height="116" rx="12" fill="#E7F6F0" stroke="#12A56D" stroke-width="3"/><text x="423" y="198" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#0A5B3C">LOAN</text>
+<text x="423" y="224" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Used only by the MERGE source query</text>
+<text x="423" y="246" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">SOURCE_SYSTEM = 'CBS_SIM'</text>
+<text x="423" y="268" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAN_ID, LOAN_REF</text>
+</g>
+<g class="node" data-node="LOAN_HIST" data-kind="source"><rect x="405" y="330" width="410" height="160" rx="12" fill="#E6EEFF" stroke="#0A50FF" stroke-width="3"/><text x="423" y="358" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#062C8C">LOAN_HIST</text>
+<text x="423" y="384" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAD_ID = p_loan_load_id</text>
+<text x="423" y="406" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAN_ID, LIMIT_ID, PARTNER_ID</text>
+<text x="423" y="428" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">CURRENCY_CODE, PRINCIPAL_AMT, UNDRAWN_AMT</text>
+<text x="423" y="450" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Read independently by the MERGE</text>
+<text x="423" y="472" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">source and by the loan_snapshot CTE</text>
+</g>
+<g class="node" data-node="LOAN_COLLATERAL_REL_HIST" data-kind="source"><rect x="405" y="560" width="325" height="138" rx="12" fill="#F6EDEA" stroke="#A34929" stroke-width="3"/><text x="423" y="588" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#5A2817">LOAN_COLLATERAL_REL_HIST</text>
+<text x="423" y="614" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAD_ID = p_collateral_load_id</text>
+<text x="423" y="636" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">RELATION_STATUS = 'ACTIVE'</text>
+<text x="423" y="658" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAN_ID, ALLOCATED_VALUE_AMT,</text>
+<text x="423" y="680" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">ALLOCATION_CURRENCY_CODE</text>
+</g>
+<g class="node" data-node="FX_RATE" data-kind="source"><rect x="405" y="770" width="385" height="160" rx="12" fill="#FAEDFA" stroke="#D04BD2" stroke-width="3"/><text x="423" y="798" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#722974">FX_RATE</text>
+<text x="423" y="824" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAD_ID = p_fx_load_id</text>
+<text x="423" y="846" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">RATE_DATE = p_business_date</text>
+<text x="423" y="868" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">RATE_TYPE = 'ECB' (fixture constant)</text>
+<text x="423" y="890" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">FROM_CURRENCY_CODE, TO_CURRENCY_CODE</text>
+<text x="423" y="912" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">EXCHANGE_RATE</text>
+</g>
+<g class="node" data-node="MERGE" data-kind="step"><rect x="965" y="170" width="454" height="160" rx="12" fill="#F6F4E6" stroke="#A39300" stroke-width="2"/><text x="983" y="198" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#5A5100">MERGE identity</text>
+<text x="983" y="224" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Source: LOAN_HIST joined to LOAN on LOAN_ID</text>
+<text x="983" y="246" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Match key: EXPOSURE.LOAN_ID = source LOAN_ID</text>
+<text x="983" y="268" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">WHEN NOT MATCHED: insert a new identity</text>
+<text x="983" y="290" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">EXPOSURE_ID = SEQ_EXPOSURE.NEXTVAL</text>
+<text x="983" y="312" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">SOURCE_SYSTEM 'CBS_SIM', EXPOSURE_REF = LOAN_REF</text>
+</g>
+<g class="node" data-node="loan_snapshot" data-kind="step"><rect x="965" y="380" width="410" height="116" rx="12" fill="#E6EEFF" stroke="#0A50FF" stroke-width="2"/><text x="983" y="408" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#062C8C">loan_snapshot CTE</text>
+<text x="983" y="434" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Reads LOAN_HIST for p_loan_load_id</text>
+<text x="983" y="456" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAN_ID, LIMIT_ID, PARTNER_ID,</text>
+<text x="983" y="478" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">CURRENCY_CODE, PRINCIPAL_AMT, UNDRAWN_AMT</text>
+</g>
+<g class="node" data-node="collateral_by_loan" data-kind="step"><rect x="965" y="570" width="383" height="182" rx="12" fill="#F6F4E6" stroke="#A39300" stroke-width="2"/><text x="983" y="598" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#5A5100">collateral_by_loan CTE</text>
+<text x="983" y="624" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Allocations join loan_snapshot on LOAN_ID</text>
+<text x="983" y="646" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LEFT JOIN FX_RATE on allocation currency -&gt; loan</text>
+<text x="983" y="668" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">currency, load, business date and rate type</text>
+<text x="983" y="690" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">GROUP BY LOAN_ID</text>
+<text x="983" y="712" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">SUM(allocated amount; amount * EXCHANGE_RATE</text>
+<text x="983" y="734" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">when the currencies differ)</text>
+</g>
+<g class="node" data-node="EXPOSURE" data-kind="step"><rect x="1589" y="170" width="365" height="138" rx="12" fill="#F6F4E6" stroke="#A39300" stroke-width="2"/><text x="1607" y="198" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#5A5100">EXPOSURE (identity table)</text>
+<text x="1607" y="224" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Match key: LOAN_ID</text>
+<text x="1607" y="246" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Columns inserted by the MERGE: EXPOSURE_ID,</text>
+<text x="1607" y="268" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">SOURCE_SYSTEM, EXPOSURE_REF, LOAN_ID</text>
+<text x="1607" y="290" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Read back by the projection on LOAN_ID</text>
+</g>
+<g class="node" data-node="projection" data-kind="step"><rect x="1589" y="380" width="417" height="314" rx="12" fill="#F6F4E6" stroke="#A39300" stroke-width="2"/><text x="1607" y="408" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#5A5100">Exposure row projection</text>
+<text x="1607" y="434" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">FROM loan_snapshot ls</text>
+<text x="1607" y="456" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">JOIN EXPOSURE e ON e.LOAN_ID = ls.LOAN_ID</text>
+<text x="1607" y="478" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LEFT JOIN collateral_by_loan cb</text>
+<text x="1607" y="500" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">ON cb.LOAN_ID = ls.LOAN_ID</text>
+<text x="1607" y="522" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E293B">Gross exposure</text>
+<text x="1607" y="544" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">PRINCIPAL_AMT + UNDRAWN_AMT * 0.50 (c_demo_ccf)</text>
+<text x="1607" y="566" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E293B">Eligible collateral</text>
+<text x="1607" y="588" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">NVL(cb.ELIGIBLE_COLLATERAL_AMT, 0)</text>
+<text x="1607" y="610" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E293B">Net exposure</text>
+<text x="1607" y="632" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">GREATEST(0, gross - eligible collateral)</text>
+<text x="1607" y="654" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E293B">Rule version</text>
+<text x="1607" y="676" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">'DEMO_CCF_50_ECB' (fixture label)</text>
+</g>
+<g class="node" data-node="pExp" data-kind="control"><rect x="1589" y="780" width="216" height="46" rx="12" fill="#F2F3F4" stroke="#7A8594" stroke-width="2"/><text x="1607" y="808" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#434951">p_exposure_load_id</text>
+</g>
+<g class="node" data-node="EXPOSURE_HIST" data-kind="target"><rect x="2156" y="380" width="431" height="292" rx="12" fill="#F6F4E6" stroke="#A39300" stroke-width="3"/><text x="2174" y="408" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#5A5100">EXPOSURE_HIST</text>
+<text x="2174" y="434" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Rows: loan_snapshot joined to EXPOSURE on LOAN_ID</text>
+<text x="2174" y="456" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E293B">Keys and dimensions</text>
+<text x="2174" y="478" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">EXPOSURE_ID, LOAD_ID = p_exposure_load_id</text>
+<text x="2174" y="500" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAN_ID, LIMIT_ID, PARTNER_ID, CURRENCY_CODE</text>
+<text x="2174" y="522" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E293B">Amounts</text>
+<text x="2174" y="544" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">OUTSTANDING_AMT = PRINCIPAL_AMT</text>
+<text x="2174" y="566" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">UNDRAWN_AMT</text>
+<text x="2174" y="588" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">GROSS_EXPOSURE_AMT, ELIGIBLE_COLLATERAL_AMT,</text>
+<text x="2174" y="610" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">NET_EXPOSURE_AMT</text>
+<text x="2174" y="632" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E293B">Audit</text>
+<text x="2174" y="654" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">CALC_RULE_VERSION = 'DEMO_CCF_50_ECB'</text>
+</g>
+<g class="node" data-node="CTRL_LOAD" data-kind="control"><rect x="2156" y="790" width="426" height="160" rx="12" fill="#F2F3F4" stroke="#7A8594" stroke-width="2"/><text x="2174" y="818" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#434951">CTRL_LOAD (output load row)</text>
+<text x="2174" y="844" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">UPDATE WHERE LOAD_ID = p_exposure_load_id</text>
+<text x="2174" y="866" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">AND LOAD_STATUS = 'STARTED'</text>
+<text x="2174" y="888" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Sets LOAD_STATUS = 'COMPLETED', FINISHED_AT</text>
+<text x="2174" y="910" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">SOURCE_ROW_COUNT = LOAN_HIST rows counted</text>
+<text x="2174" y="932" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">TARGET_ROW_COUNT = EXPOSURE_HIST rows inserted</text>
+</g>
+<g class="node" data-node="checks" data-kind="note"><rect x="40" y="1010" width="2547" height="248" rx="12" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/><text x="58" y="1038" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#515A65">Pre-write validations (raise before any row is written)</text>
+<text x="58" y="1064" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">-20400  p_business_date is NULL or not at midnight</text>
+<text x="58" y="1086" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">-20401  loan, collateral and FX load: not one VALIDATED/COMPLETED load for the business date; the loan load must also be CBS_SIM / LOAN</text>
+<text x="58" y="1108" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">-20402  output load is not one STARTED INTERNAL / DERIVED_EXPOSURE load for the business date</text>
+<text x="58" y="1130" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">-20403  the output load already has EXPOSURE_HIST rows</text>
+<text x="58" y="1152" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">-20404  an active allocation has a NULL amount or currency</text>
+<text x="58" y="1174" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">-20405  an active allocation's LOAN_ID is not in the loan snapshot</text>
+<text x="58" y="1196" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">-20406  an active allocation currency pair differing from the loan currency has no direct ECB rate in FX_RATE</text>
+<text x="58" y="1218" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">-20407  the CTRL_LOAD update did not change exactly one STARTED row</text>
+<text x="58" y="1240" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">The package never COMMITs or ROLLBACKs.</text>
+</g>
+<g class="node" data-node="assumptions" data-kind="note"><rect x="40" y="1310" width="2547" height="138" rx="12" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/><text x="58" y="1338" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#515A65">Fixture assumptions and unresolved rules (not approved business policy)</text>
+<text x="58" y="1364" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Candidate assumptions named in the package header: CCF 50%; ECB direct rates for the business date; ALLOCATED_VALUE_AMT already eligible after allocation and haircuts;</text>
+<text x="58" y="1386" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">all three input load IDs refer to the requested business date; the caller resolves the authoritative collateral and FX load IDs; all loans of the chosen LOAN_HIST snapshot are included.</text>
+<text x="58" y="1408" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Source system and dataset of the collateral and FX loads are not established by the package; they must be confirmed from the operating process.</text>
+<text x="58" y="1430" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">The header comments describe the scheduler creating the STARTED output load and the caller committing or rolling back; the package body implements none of that.</text>
+</g>
+<g class="edge" data-edge="e_pLoan" data-from="pLoan" data-to="LOAN_HIST" data-from-side="R" data-to-side="L" data-color="#7A8594" data-style="control" data-evidence="L245 lh.LOAD_ID = p_loan_load_id"><path d="M211 410 L405 410" fill="none" stroke="#7A8594" stroke-width="2.4" stroke-linejoin="round" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#m-7A8594)"/></g>
+<g class="edge" data-edge="e_pColl" data-from="pColl" data-to="LOAN_COLLATERAL_REL_HIST" data-from-side="R" data-to-side="L" data-color="#7A8594" data-style="control" data-evidence="L265 lcr.LOAD_ID = p_collateral_load_id"><path d="M255 620 L405 620" fill="none" stroke="#7A8594" stroke-width="2.4" stroke-linejoin="round" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#m-7A8594)"/></g>
+<g class="edge" data-edge="e_pFx" data-from="pFx" data-to="FX_RATE" data-from-side="R" data-to-side="L" data-color="#7A8594" data-style="control" data-evidence="L260 fx.LOAD_ID = p_fx_load_id"><path d="M190 814 L405 814" fill="none" stroke="#7A8594" stroke-width="2.4" stroke-linejoin="round" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#m-7A8594)"/></g>
+<g class="edge" data-edge="e_pDate" data-from="pDate" data-to="FX_RATE" data-from-side="R" data-to-side="L" data-color="#7A8594" data-style="control" data-evidence="L261 fx.RATE_DATE = p_business_date"><path d="M227 900 L405 900" fill="none" stroke="#7A8594" stroke-width="2.4" stroke-linejoin="round" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#m-7A8594)"/></g>
+<g class="edge" data-edge="e_loan_merge" data-from="LOAN" data-to="MERGE" data-from-side="R" data-to-side="L" data-color="#12A56D" data-style="data" data-evidence="L206-L208 JOIN LOAN on LOAN_ID, SOURCE_SYSTEM = 'CBS_SIM'"><path d="M697 228 L965 228" fill="none" stroke="#12A56D" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-12A56D)"/></g>
+<g class="edge" data-edge="e_hist_merge" data-from="LOAN_HIST" data-to="MERGE" data-from-side="R" data-to-side="L" data-color="#0A50FF" data-style="data" data-evidence="L203-L210 MERGE source reads LOAN_HIST"><path d="M815 350 L880 350 L880 290 L965 290" fill="none" stroke="#0A50FF" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-0A50FF)"/></g>
+<g class="edge" data-edge="e_hist_snap" data-from="LOAN_HIST" data-to="loan_snapshot" data-from-side="R" data-to-side="L" data-color="#0A50FF" data-style="data" data-evidence="L237-L246 loan_snapshot reads LOAN_HIST"><path d="M815 410 L965 410" fill="none" stroke="#0A50FF" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-0A50FF)"/></g>
+<g class="edge" data-edge="e_rel_coll" data-from="LOAN_COLLATERAL_REL_HIST" data-to="collateral_by_loan" data-from-side="R" data-to-side="L" data-color="#A34929" data-style="data" data-evidence="L256-L266 active allocations of the collateral load"><path d="M730 620 L965 620" fill="none" stroke="#A34929" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-A34929)"/></g>
+<g class="edge" data-edge="e_fx_coll" data-from="FX_RATE" data-to="collateral_by_loan" data-from-side="R" data-to-side="L" data-color="#D04BD2" data-style="data" data-evidence="L259-L264 LEFT JOIN FX_RATE on the currency pair"><path d="M790 810 L880 810 L880 720 L965 720" fill="none" stroke="#D04BD2" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-D04BD2)"/></g>
+<g class="edge" data-edge="e_snap_coll" data-from="loan_snapshot" data-to="collateral_by_loan" data-from-side="B" data-to-side="T" data-color="#0A50FF" data-style="data" data-evidence="L257-L258 JOIN loan_snapshot on LOAN_ID"><path d="M1005 496 L1005 570" fill="none" stroke="#0A50FF" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-0A50FF)"/></g>
+<g class="edge" data-edge="e_merge_exp" data-from="MERGE" data-to="EXPOSURE" data-from-side="R" data-to-side="L" data-color="#A39300" data-style="data" data-evidence="L202-L219 MERGE INTO EXPOSURE, WHEN NOT MATCHED INSERT"><path d="M1419 250 L1589 250" fill="none" stroke="#A39300" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-A39300)"/></g>
+<g class="edge" data-edge="e_exp_proj" data-from="EXPOSURE" data-to="projection" data-from-side="B" data-to-side="T" data-color="#A39300" data-style="data" data-evidence="L286-L287 JOIN EXPOSURE on LOAN_ID"><path d="M1629 308 L1629 380" fill="none" stroke="#A39300" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-A39300)"/></g>
+<g class="edge" data-edge="e_snap_proj" data-from="loan_snapshot" data-to="projection" data-from-side="R" data-to-side="L" data-color="#0A50FF" data-style="data" data-evidence="L285 FROM loan_snapshot ls"><path d="M1375 410 L1589 410" fill="none" stroke="#0A50FF" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-0A50FF)"/></g>
+<g class="edge" data-edge="e_coll_proj" data-from="collateral_by_loan" data-to="projection" data-from-side="R" data-to-side="L" data-color="#A39300" data-style="data" data-evidence="L288-L289 LEFT JOIN collateral_by_loan on LOAN_ID"><path d="M1348 630 L1589 630" fill="none" stroke="#A39300" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-A39300)"/></g>
+<g class="edge" data-edge="e_proj_hist" data-from="projection" data-to="EXPOSURE_HIST" data-from-side="R" data-to-side="L" data-color="#A39300" data-style="data" data-evidence="L223-L236, L269-L284 INSERT INTO EXPOSURE_HIST SELECT"><path d="M2006 480 L2156 480" fill="none" stroke="#A39300" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-A39300)"/></g>
+<g class="edge" data-edge="e_pExp" data-from="pExp" data-to="projection" data-from-side="T" data-to-side="B" data-color="#7A8594" data-style="control" data-evidence="L270 p_exposure_load_id is selected as LOAD_ID"><path d="M1629 780 L1629 694" fill="none" stroke="#7A8594" stroke-width="2.4" stroke-linejoin="round" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#m-7A8594)"/></g>
+<g class="edge" data-edge="e_hist_ctrl" data-from="EXPOSURE_HIST" data-to="CTRL_LOAD" data-from-side="B" data-to-side="T" data-color="#7A8594" data-style="control" data-evidence="L291, L295-L301 UPDATE CTRL_LOAD with the counts"><path d="M2196 672 L2196 790" fill="none" stroke="#7A8594" stroke-width="2.4" stroke-linejoin="round" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#m-7A8594)"/></g>
+<g class="label" data-label-for="e_pLoan"><rect x="253" y="400" width="94" height="20" rx="5" fill="#FFFFFF" stroke="#7A8594"/><text x="300" y="414" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#4F5660">LOAD_ID filter</text></g>
+<g class="label" data-label-for="e_pColl"><rect x="275" y="610" width="94" height="20" rx="5" fill="#FFFFFF" stroke="#7A8594"/><text x="322" y="624" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#4F5660">LOAD_ID filter</text></g>
+<g class="label" data-label-for="e_pFx"><rect x="242.5" y="804" width="94" height="20" rx="5" fill="#FFFFFF" stroke="#7A8594"/><text x="289.5" y="818" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#4F5660">LOAD_ID filter</text></g>
+<g class="label" data-label-for="e_pDate"><rect x="251.5" y="890" width="113" height="20" rx="5" fill="#FFFFFF" stroke="#7A8594"/><text x="308" y="904" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#4F5660">RATE_DATE filter</text></g>
+<g class="label" data-label-for="e_loan_merge"><rect x="783" y="218" width="80" height="20" rx="5" fill="#FFFFFF" stroke="#12A56D"/><text x="823" y="232" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#0C6B47">LOAN_REF</text></g>
+<g class="label" data-label-for="e_hist_merge"><rect x="839" y="310" width="82" height="20" rx="5" fill="#FFFFFF" stroke="#0A50FF"/><text x="880" y="324" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#0634A6">source rows</text></g>
+<g class="label" data-label-for="e_hist_snap"><rect x="834.5" y="400" width="95" height="20" rx="5" fill="#FFFFFF" stroke="#0A50FF"/><text x="882" y="414" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#0634A6">snapshot rows</text></g>
+<g class="label" data-label-for="e_rel_coll"><rect x="801" y="610" width="77" height="20" rx="5" fill="#FFFFFF" stroke="#A34929"/><text x="839.5" y="624" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#6A2F1B">active rows</text></g>
+<g class="label" data-label-for="e_fx_coll"><rect x="858.5" y="755" width="43" height="20" rx="5" fill="#FFFFFF" stroke="#D04BD2"/><text x="880" y="769" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#873188">rates</text></g>
+<g class="label" data-label-for="e_snap_coll"><rect x="944.5" y="515" width="121" height="20" rx="5" fill="#FFFFFF" stroke="#0A50FF"/><text x="1005" y="529" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#0634A6">LOAN_ID, currency</text></g>
+<g class="label" data-label-for="e_merge_exp"><rect x="1450.5" y="240" width="91" height="20" rx="5" fill="#FFFFFF" stroke="#A39300"/><text x="1496" y="254" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#6A6000">new identities</text></g>
+<g class="label" data-label-for="e_exp_proj"><rect x="1578" y="326" width="102" height="20" rx="5" fill="#FFFFFF" stroke="#A39300"/><text x="1629" y="340" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#6A6000">EXPOSURE_ID</text></g>
+<g class="label" data-label-for="e_snap_proj"><rect x="1438" y="400" width="72" height="20" rx="5" fill="#FFFFFF" stroke="#0A50FF"/><text x="1474" y="414" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#0634A6">loan fields</text></g>
+<g class="label" data-label-for="e_coll_proj"><rect x="1410.5" y="620" width="100" height="20" rx="5" fill="#FFFFFF" stroke="#A39300"/><text x="1460.5" y="634" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#6A6000">eligible amount</text></g>
+<g class="label" data-label-for="e_proj_hist"><rect x="2043" y="470" width="60" height="20" rx="5" fill="#FFFFFF" stroke="#A39300"/><text x="2073" y="484" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#6A6000">INSERT</text></g>
+<g class="label" data-label-for="e_pExp"><rect x="1578.5" y="719" width="101" height="20" rx="5" fill="#FFFFFF" stroke="#7A8594"/><text x="1629" y="733" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#4F5660">LOAD_ID value</text></g>
+<g class="label" data-label-for="e_hist_ctrl"><rect x="2161.5" y="713" width="69" height="20" rx="5" fill="#FFFFFF" stroke="#7A8594"/><text x="2196" y="727" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#4F5660">row count</text></g>
+</svg>

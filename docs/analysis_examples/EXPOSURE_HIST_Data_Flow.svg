@@ -1,0 +1,252 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2600 1660" role="img" aria-labelledby="title description">
+  <title id="title">PKG_ETL_EXPOSURE data flow to EXPOSURE_HIST</title>
+  <desc id="description">Illustrative lineage from independently loaded loan, collateral-allocation, and FX inputs through identity creation and exposure calculations into EXPOSURE_HIST, with separate control metadata and fixture assumptions.</desc>
+  <defs>
+    <marker id="arrow-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#2878b5"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#7953a6"/>
+    </marker>
+    <marker id="arrow-amber" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#bc7b12"/>
+    </marker>
+    <marker id="arrow-cyan" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#128a9c"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#32834d"/>
+    </marker>
+    <marker id="arrow-navy" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#244c83"/>
+    </marker>
+    <marker id="arrow-control" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1,1 L11,6 L1,11 Z" fill="#bc7b12"/>
+    </marker>
+    <style>
+      text { font-family: "Segoe UI", Arial, sans-serif; fill: #1d2b3a; }
+      .title { font-size: 34px; font-weight: 700; }
+      .subtitle { font-size: 17px; fill: #536273; }
+      .section { font-size: 19px; font-weight: 700; }
+      .node-title { font-size: 19px; font-weight: 700; }
+      .body { font-size: 15px; }
+      .small { font-size: 13px; }
+      .tiny { font-size: 12px; }
+      .muted { fill: #536273; }
+      .white { fill: #ffffff; }
+      .card { stroke-width: 2; rx: 12; }
+      .source-loan { fill: #eef6fc; stroke: #2878b5; }
+      .source-coll { fill: #f5f0fa; stroke: #7953a6; }
+      .source-fx { fill: #fff6e8; stroke: #bc7b12; }
+      .prep { fill: #f5f8fb; stroke: #8a9aaa; }
+      .conversion { fill: #e9f8fa; stroke: #128a9c; }
+      .identity { fill: #edf7ef; stroke: #32834d; }
+      .calc { fill: #eef2fa; stroke: #244c83; }
+      .target { fill: #f3f6fa; stroke: #244c83; }
+      .control { fill: #fff8e9; stroke: #bc7b12; }
+      .note { fill: #fffdf6; stroke: #b7a56f; }
+      .line-loan { fill: none; stroke: #2878b5; stroke-width: 3; marker-end: url(#arrow-blue); }
+      .line-coll { fill: none; stroke: #7953a6; stroke-width: 3; marker-end: url(#arrow-purple); }
+      .line-fx { fill: none; stroke: #bc7b12; stroke-width: 3; marker-end: url(#arrow-amber); }
+      .line-cyan { fill: none; stroke: #128a9c; stroke-width: 3; marker-end: url(#arrow-cyan); }
+      .line-green { fill: none; stroke: #32834d; stroke-width: 3; marker-end: url(#arrow-green); }
+      .line-navy { fill: none; stroke: #244c83; stroke-width: 3; marker-end: url(#arrow-navy); }
+      .line-control { fill: none; stroke: #bc7b12; stroke-width: 2.5; stroke-dasharray: 9 7; marker-end: url(#arrow-control); }
+      .divider { stroke: #d3dce5; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <rect width="2600" height="1660" fill="#ffffff"/>
+  <text x="60" y="58" class="title">PKG_ETL_EXPOSURE → EXPOSURE_HIST</text>
+  <text x="60" y="88" class="subtitle">Implemented lineage in the supplied package fixture. This is not an approved mapping or deployment specification.</text>
+
+  <text x="60" y="126" class="section">CONTROL METADATA — separate from business rows</text>
+  <rect x="60" y="145" width="1510" height="205" class="card control"/>
+  <text x="85" y="179" class="node-title">Input-load checks in UBB_CORE2.CTRL_LOAD</text>
+  <text x="85" y="210" class="body">Independent caller parameters: p_loan_load_id • p_collateral_load_id • p_fx_load_id</text>
+  <text x="85" y="238" class="body">Each must match its own LOAD_ID and p_business_date; status must be VALIDATED or COMPLETED.</text>
+  <text x="85" y="266" class="body">Loan additionally requires SOURCE_SYSTEM='CBS_SIM', DATASET_NAME='LOAN'.</text>
+  <text x="85" y="294" class="body">Collateral and FX source/dataset are not checked by this fixture. Business date must be non-null at midnight.</text>
+  <text x="85" y="322" class="small muted">Input IDs remain independent; equal dates do not imply a shared load. The fixture comment says their operational relationship remains an assumption.</text>
+
+  <rect x="1600" y="145" width="940" height="205" class="card control"/>
+  <text x="1625" y="179" class="node-title">Output control record: UBB_CORE2.CTRL_LOAD</text>
+  <text x="1625" y="210" class="body">Caller passes p_exposure_load_id; comment says scheduler creates</text>
+  <text x="1625" y="235" class="body">SOURCE_SYSTEM='INTERNAL', DATASET_NAME='DERIVED_EXPOSURE', status STARTED.</text>
+  <text x="1625" y="265" class="body">Package validates that record, labels output rows with its LOAD_ID,</text>
+  <text x="1625" y="290" class="body">then sets it to COMPLETED with counts inside the caller's transaction.</text>
+  <text x="1625" y="320" class="small muted">Fixture comment: caller commits on success; on failure it rolls back and records FAILED separately. Package has no COMMIT/ROLLBACK.</text>
+
+  <path d="M360 350 V385 H273 V430" class="line-control"/>
+  <text x="375" y="380" class="small muted">independent load checks</text>
+  <path d="M2065 350 V410 H2390 V660" class="line-control"/>
+  <text x="2080" y="395" class="small muted">p_exposure_load_id → target LOAD_ID</text>
+
+  <text x="60" y="405" class="section">BUSINESS ROW FLOW — left to right</text>
+
+  <!-- Sources -->
+  <rect x="60" y="430" width="430" height="260" class="card source-loan"/>
+  <text x="85" y="465" class="node-title">UBB_CORE2.LOAN_HIST</text>
+  <text x="85" y="493" class="small">Stream 1 • p_loan_load_id</text>
+  <text x="85" y="524" class="body">Selection: LOAD_ID = p_loan_load_id</text>
+  <text x="85" y="552" class="body">No additional date, status, or row filter.</text>
+  <line x1="85" y1="570" x2="465" y2="570" class="divider"/>
+  <text x="85" y="598" class="small">Fields used downstream</text>
+  <text x="85" y="623" class="small">LOAN_ID, LIMIT_ID, PARTNER_ID, CURRENCY_CODE,</text>
+  <text x="85" y="648" class="small">PRINCIPAL_AMT, UNDRAWN_AMT</text>
+  <text x="85" y="674" class="tiny muted">v_loan_rows counts all selected rows.</text>
+
+  <rect x="60" y="790" width="430" height="185" class="card source-loan"/>
+  <text x="85" y="825" class="node-title">UBB_CORE2.LOAN</text>
+  <text x="85" y="855" class="body">Identity-merge reference branch</text>
+  <text x="85" y="884" class="small">Join: LOAN.LOAN_ID = LOAN_HIST.LOAN_ID</text>
+  <text x="85" y="910" class="small">Filter: LOAN.SOURCE_SYSTEM = 'CBS_SIM'</text>
+  <text x="85" y="944" class="small">LOAN_REF supplies EXPOSURE_REF for new identities.</text>
+
+  <rect x="60" y="1040" width="430" height="255" class="card source-coll"/>
+  <text x="85" y="1075" class="node-title">UBB_CORE2.LOAN_COLLATERAL_REL_HIST</text>
+  <text x="85" y="1105" class="small">Stream 2 • p_collateral_load_id</text>
+  <text x="85" y="1135" class="body">Selection: LOAD_ID = p_collateral_load_id</text>
+  <text x="85" y="1163" class="body">and RELATION_STATUS = 'ACTIVE'</text>
+  <line x1="85" y1="1180" x2="465" y2="1180" class="divider"/>
+  <text x="85" y="1208" class="small">Downstream: LOAN_ID, ALLOCATED_VALUE_AMT,</text>
+  <text x="85" y="1233" class="small">ALLOCATION_CURRENCY_CODE, RELATION_STATUS</text>
+  <text x="85" y="1267" class="tiny muted">Active rows with null amount/currency are rejected.</text>
+
+  <rect x="60" y="1360" width="430" height="205" class="card source-fx"/>
+  <text x="85" y="1395" class="node-title">UBB_CORE2.FX_RATE</text>
+  <text x="85" y="1425" class="small">Stream 3 • p_fx_load_id</text>
+  <text x="85" y="1455" class="body">Lookup filters: LOAD_ID = p_fx_load_id,</text>
+  <text x="85" y="1482" class="body">RATE_DATE = p_business_date, RATE_TYPE = 'ECB'</text>
+  <text x="85" y="1512" class="small">Pair: FROM_CURRENCY_CODE → TO_CURRENCY_CODE;</text>
+  <text x="85" y="1538" class="small">EXCHANGE_RATE is used only for differing currencies.</text>
+
+  <!-- Preparation -->
+  <rect x="600" y="455" width="430" height="235" class="card prep"/>
+  <text x="625" y="490" class="node-title">Loan snapshot</text>
+  <text x="625" y="523" class="body">CTE loan_snapshot applies the same</text>
+  <text x="625" y="549" class="body">LOAD_ID = p_loan_load_id selection.</text>
+  <text x="625" y="586" class="small">Carries loan, limit, partner, currency,</text>
+  <text x="625" y="611" class="small">principal and undrawn amount fields.</text>
+  <text x="625" y="656" class="tiny muted">No loan-status predicate is implemented.</text>
+
+  <rect x="600" y="805" width="430" height="270" class="card prep"/>
+  <text x="625" y="840" class="node-title">Active allocation + loan match</text>
+  <text x="625" y="873" class="body">Join selected loan_snapshot on LOAN_ID.</text>
+  <text x="625" y="904" class="small">Active allocations only, from the independent</text>
+  <text x="625" y="929" class="small">collateral LOAD_ID. The precheck rejects an</text>
+  <text x="625" y="954" class="small">active allocation with no selected loan.</text>
+  <line x1="625" y1="974" x2="1005" y2="974" class="divider"/>
+  <text x="625" y="1003" class="small">Output to conversion: loan ID/currency and</text>
+  <text x="625" y="1028" class="small">allocation amount/currency.</text>
+  <text x="625" y="1057" class="tiny muted">One grouped collateral result per LOAN_ID.</text>
+
+  <!-- Identity -->
+  <rect x="1160" y="455" width="440" height="285" class="card identity"/>
+  <text x="1185" y="490" class="node-title">Stable identity: UBB_CORE2.EXPOSURE</text>
+  <text x="1185" y="523" class="body">MERGE source: selected loan_snapshot joined</text>
+  <text x="1185" y="549" class="body">to LOAN on LOAN_ID; source system CBS_SIM.</text>
+  <text x="1185" y="583" class="small">Match: EXPOSURE.LOAN_ID = source.LOAN_ID</text>
+  <text x="1185" y="614" class="small">Match found → reuse EXPOSURE_ID; no update.</text>
+  <text x="1185" y="643" class="small">No match → SEQ_EXPOSURE.NEXTVAL;</text>
+  <text x="1185" y="668" class="small">insert SOURCE_SYSTEM='CBS_SIM', EXPOSURE_REF</text>
+  <text x="1185" y="693" class="small">from LOAN.LOAN_REF, and LOAN_ID.</text>
+  <text x="1185" y="724" class="tiny muted">Merge input LOAN_ID is distinct from generated EXPOSURE_ID.</text>
+
+  <!-- Conversion and aggregation -->
+  <rect x="1160" y="855" width="440" height="355" class="card conversion"/>
+  <text x="1185" y="890" class="node-title">Currency alignment + aggregation</text>
+  <text x="1185" y="925" class="body">Join FX on the selected FX load, business date,</text>
+  <text x="1185" y="951" class="body">ECB type, allocation currency → loan currency.</text>
+  <text x="1185" y="990" class="small">Per active allocation:</text>
+  <text x="1205" y="1018" class="small">same currency → ALLOCATED_VALUE_AMT</text>
+  <text x="1205" y="1045" class="small">otherwise → ALLOCATED_VALUE_AMT × EXCHANGE_RATE</text>
+  <line x1="1185" y1="1064" x2="1575" y2="1064" class="divider"/>
+  <text x="1185" y="1093" class="body">SUM converted amounts GROUP BY lcr.LOAN_ID</text>
+  <text x="1185" y="1125" class="small">Missing direct rate for any differing-currency pair</text>
+  <text x="1185" y="1150" class="small">fails precheck; no inverse or fallback rate is used.</text>
+  <text x="1185" y="1185" class="tiny muted">LEFT JOIN to this aggregate; no allocation → NVL(..., 0).</text>
+
+  <!-- Calculation -->
+  <rect x="1690" y="455" width="420" height="355" class="card calc"/>
+  <text x="1715" y="490" class="node-title">Per-loan exposure calculation</text>
+  <text x="1715" y="525" class="small">Join selected loan_snapshot to EXPOSURE on LOAN_ID;</text>
+  <text x="1715" y="550" class="small">left join collateral aggregate on LOAN_ID.</text>
+  <line x1="1715" y1="570" x2="2085" y2="570" class="divider"/>
+  <text x="1715" y="602" class="body">OUTSTANDING_AMT = PRINCIPAL_AMT</text>
+  <text x="1715" y="635" class="body">UNDRAWN_AMT = loan_snapshot.UNDRAWN_AMT</text>
+  <text x="1715" y="674" class="body">GROSS = PRINCIPAL_AMT + (UNDRAWN_AMT × 0.50)</text>
+  <text x="1715" y="713" class="body">ELIGIBLE_COLLATERAL = NVL(sum, 0)</text>
+  <text x="1715" y="752" class="body">NET = GREATEST(0, GROSS − ELIGIBLE_COLLATERAL)</text>
+  <text x="1715" y="784" class="tiny muted">CALC_RULE_VERSION = 'DEMO_CCF_50_ECB'</text>
+
+  <!-- Target -->
+  <rect x="2190" y="660" width="350" height="560" class="card target"/>
+  <text x="2215" y="695" class="node-title">Target rows</text>
+  <text x="2215" y="727" class="node-title">UBB_CORE2.EXPOSURE_HIST</text>
+  <text x="2215" y="764" class="small">One INSERT row per selected</text>
+  <text x="2215" y="789" class="small">loan_snapshot row joined to identity;</text>
+  <text x="2215" y="814" class="small">uniqueness depends on fixture inputs.</text>
+  <line x1="2215" y1="834" x2="2515" y2="834" class="divider"/>
+  <text x="2215" y="865" class="small">Identity / lineage</text>
+  <text x="2215" y="891" class="small">EXPOSURE_ID, LOAD_ID, LOAN_ID</text>
+  <text x="2215" y="916" class="small">LIMIT_ID, PARTNER_ID, CURRENCY_CODE</text>
+  <line x1="2215" y1="936" x2="2515" y2="936" class="divider"/>
+  <text x="2215" y="967" class="small">Amounts / rule</text>
+  <text x="2215" y="993" class="small">OUTSTANDING_AMT, UNDRAWN_AMT</text>
+  <text x="2215" y="1018" class="small">GROSS_EXPOSURE_AMT</text>
+  <text x="2215" y="1043" class="small">ELIGIBLE_COLLATERAL_AMT</text>
+  <text x="2215" y="1068" class="small">NET_EXPOSURE_AMT</text>
+  <text x="2215" y="1093" class="small">CALC_RULE_VERSION</text>
+  <line x1="2215" y1="1113" x2="2515" y2="1113" class="divider"/>
+  <text x="2215" y="1143" class="small">OUT parameters:</text>
+  <text x="2215" y="1168" class="small">rows_read = selected loan row count;</text>
+  <text x="2215" y="1193" class="small">rows_written = identity MERGE rowcount</text>
+  <text x="2215" y="1218" class="small">+ EXPOSURE_HIST insert rowcount.</text>
+
+  <!-- Business data paths -->
+  <path d="M490 560 H600" class="line-loan"/>
+  <text x="500" y="545" class="tiny">loan snapshot</text>
+  <path d="M1030 555 H1160" class="line-green"/>
+  <text x="1038" y="540" class="tiny">merge input</text>
+  <path d="M490 866 H535 V380 H1380 V455" class="line-green"/>
+  <text x="585" y="367" class="tiny">LOAN_REF + CBS_SIM reference join</text>
+  <path d="M490 1150 H535 V930 H600" class="line-coll"/>
+  <path d="M815 690 V765 H550 V840 H600" class="line-loan"/>
+  <text x="558" y="790" class="tiny">LOAN_ID / loan currency</text>
+  <path d="M1030 930 H1160" class="line-coll"/>
+  <text x="1040" y="915" class="tiny">active allocations</text>
+  <path d="M490 1450 H535 V1230 H1125 V1150 H1160" class="line-fx"/>
+  <text x="545" y="1218" class="tiny">FX_RATE rows</text>
+  <path d="M1600 595 H1690" class="line-green"/>
+  <text x="1608" y="580" class="tiny">stable EXPOSURE_ID</text>
+  <path d="M1030 520 H1080 V430 H1650 V485 H1690" class="line-loan"/>
+  <text x="1230" y="420" class="tiny">loan snapshot values</text>
+  <path d="M1600 1030 H1645 V830 H1770 V810" class="line-cyan"/>
+  <text x="1615" y="1015" class="tiny">collateral aggregate</text>
+  <path d="M2110 630 H2150 V760 H2190" class="line-navy"/>
+  <text x="2115" y="615" class="tiny">calculated row</text>
+
+  <!-- Secondary checks and caveats -->
+  <rect x="600" y="1250" width="1510" height="315" class="card note"/>
+  <text x="625" y="1285" class="node-title">Implemented guards and interpretation limits</text>
+  <text x="625" y="1320" class="small">• Reject if output load is not exactly one INTERNAL / DERIVED_EXPOSURE / STARTED record for the business date.</text>
+  <text x="625" y="1348" class="small">• Reject if EXPOSURE_HIST already has rows for the output LOAD_ID; this fixture treats that snapshot as immutable.</text>
+  <text x="625" y="1376" class="small">• Reject active allocations with null amount/currency; reject active allocations without a loan in the selected loan snapshot.</text>
+  <text x="625" y="1404" class="small">• Reject any differing-currency allocation/loan pair without the direct FX row described above.</text>
+  <text x="625" y="1442" class="small">Illustrative/open assumptions in the supplied fixture comments: CCF 50%; direct ECB rate for business date;</text>
+  <text x="625" y="1468" class="small">allocation amount already eligible after allocation/haircuts; and authoritative collateral/FX load selection.</text>
+  <text x="625" y="1506" class="small">Each input control row's date/status is checked, but collateral/FX source and dataset identifiers are not checked.</text>
+  <text x="625" y="1534" class="small">No approved business policy, schema validation, deployment readiness, or scheduler behavior beyond the fixture comments is implied.</text>
+  <text x="625" y="1557" class="tiny muted">The calculation's value is illustrative; no row-count, uniqueness, or business-data claim is made by this diagram.</text>
+
+  <!-- Legend -->
+  <text x="60" y="1610" class="small" font-weight="700">LEGEND</text>
+  <line x1="150" y1="1605" x2="205" y2="1605" class="line-loan"/><text x="218" y="1610" class="tiny">loan input</text>
+  <line x1="330" y1="1605" x2="385" y2="1605" class="line-coll"/><text x="398" y="1610" class="tiny">collateral input</text>
+  <line x1="545" y1="1605" x2="600" y2="1605" class="line-fx"/><text x="613" y="1610" class="tiny">FX input</text>
+  <line x1="720" y1="1605" x2="775" y2="1605" class="line-cyan"/><text x="788" y="1610" class="tiny">conversion / aggregation</text>
+  <line x1="1010" y1="1605" x2="1065" y2="1605" class="line-green"/><text x="1078" y="1610" class="tiny">stable/generated identity</text>
+  <line x1="1320" y1="1605" x2="1375" y2="1605" class="line-navy"/><text x="1388" y="1610" class="tiny">calculated output</text>
+  <line x1="1585" y1="1605" x2="1640" y2="1605" class="line-control"/><text x="1653" y="1610" class="tiny">control metadata only</text>
+</svg>
