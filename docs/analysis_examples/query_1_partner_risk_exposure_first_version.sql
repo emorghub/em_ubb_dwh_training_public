@@ -106,3 +106,4 @@ LEFT JOIN partner_collateral pc ON pc.partner_id = ph.partner_id
 WHERE ph.valid_from <= qp.as_of_date
   AND ph.valid_to   >  qp.as_of_date
   AND lt.total_principal_eur > 100000;
+
