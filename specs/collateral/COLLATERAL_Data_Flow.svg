@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2768" height="1234" viewBox="0 0 2768 1234" role="img" aria-labelledby="t d">
+<title id="t">UBB_CORE2.PKG_ETL_COLLATERAL</title>
+<desc id="d">Data lineage. P to FSL (date; L129 argument of FIND_SOURCE_LOAD). FSL to FLT (LOAD_ID; L129 predicate value). STG to FLT (staged rows; L126, L129 FROM + WHERE). FLT to JN (rows of load; L126-L129 filtered driving rows enter the join). COL to JN (COLLATERAL_ID; L127-L128 JOIN ... ON). JN to MAP (joined rows; L112-L128 SELECT list reads the joined rows). MAP to TGT (INSERT; L96-L125 INSERT ... SELECT).</desc>
+<defs>
+<marker id="m-18AA49" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#18AA49"/></marker>
+<marker id="m-2E50FA" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#2E50FA"/></marker>
+<marker id="m-7A7A7A" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#7A7A7A"/></marker>
+<marker id="m-E006BB" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,4 L0,8 z" fill="#E006BB"/></marker>
+</defs>
+<rect width="2768" height="1234" fill="#F8FAFC"/>
+<text data-role="title" x="1384" y="40" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#0F172A">UBB_CORE2.PKG_ETL_COLLATERAL</text>
+<g class="legend"><rect x="40" y="62" width="2688" height="52" rx="10" fill="#FFFFFF" stroke="#CBD5E1"/>
+<g data-legend-flow="stg" data-legend-color="#18AA49" data-legend-style="data"><path d="M64 88 L118 88" stroke="#18AA49" stroke-width="2.4" fill="none" marker-end="url(#m-18AA49)"/><text x="128" y="93" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Staged collateral rows (STG_COLLATERAL)</text></g>
+<g data-legend-flow="ident" data-legend-color="#2E50FA" data-legend-style="data"><path d="M443.984 88 L497.984 88" stroke="#2E50FA" stroke-width="2.4" fill="none" marker-end="url(#m-2E50FA)"/><text x="507.984" y="93" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Identity rows (COLLATERAL)</text></g>
+<g data-legend-flow="derived" data-legend-color="#E006BB" data-legend-style="data"><path d="M726.969 88 L780.969 88" stroke="#E006BB" stroke-width="2.4" fill="none" marker-end="url(#m-E006BB)"/><text x="790.969" y="93" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Joined / derived rows</text></g>
+<g data-legend-flow="control" data-legend-color="#7A7A7A" data-legend-style="control"><path d="M959.969 88 L1013.97 88" stroke="#7A7A7A" stroke-width="2.4" fill="none" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#m-7A7A7A)"/><text x="1023.97" y="93" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Control (parameter, load ID)</text></g>
+</g>
+<g class="node" data-node="P" data-kind="control"><rect x="40" y="160" width="273" height="94" rx="12" fill="#F2F2F2" stroke="#7A7A7A" stroke-width="2"/><text x="58" y="188" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#434343">P_BUSINESS_DATE</text>
+<text x="58" y="214" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Parameter of LOAD_DAY (IN DATE)</text>
+<text x="58" y="236" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">NULL raises ORA-20001 (L88-L89)</text>
+</g>
+<g class="node" data-node="STG" data-kind="source"><rect x="40" y="320" width="346" height="270" rx="12" fill="#E8F6ED" stroke="#18AA49" stroke-width="3"/><text x="58" y="348" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#0D5E28">STG_COLLATERAL</text>
+<text x="58" y="374" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Driving table (FROM, L126)</text>
+<text x="58" y="396" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E293B">Fields used downstream</text>
+<text x="58" y="418" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">COLLATERAL_REF, LOAD_ID,</text>
+<text x="58" y="440" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">COLLATERAL_TYPE, COLLATERAL_STATUS,</text>
+<text x="58" y="462" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">CURRENCY_CODE, MARKET_VALUE_AMT,</text>
+<text x="58" y="484" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">ELIGIBLE_VALUE_AMT, VALUATION_DATE,</text>
+<text x="58" y="506" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">VALUATION_CURRENCY_CODE,</text>
+<text x="58" y="528" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">ELIGIBILITY_FLAG,</text>
+<text x="58" y="550" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">ELIGIBILITY_REASON_CODE,</text>
+<text x="58" y="572" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">REGULATORY_HAIRCUT_PCT</text>
+</g>
+<g class="node" data-node="FSL" data-kind="control"><rect x="556" y="160" width="367" height="138" rx="12" fill="#F2F2F2" stroke="#7A7A7A" stroke-width="2"/><text x="574" y="188" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#434343">FIND_SOURCE_LOAD</text>
+<text x="574" y="214" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Function of package PKG_ETL_CONTROL</text>
+<text x="574" y="236" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">('CBS_SIM', 'COLLATERAL', P_BUSINESS_DATE)</text>
+<text x="574" y="258" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">returns the source LOAD_ID (L129)</text>
+<text x="574" y="280" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">function body is not in this package</text>
+</g>
+<g class="node" data-node="FLT" data-kind="step"><rect x="556" y="380" width="276" height="94" rx="12" fill="#E8F6ED" stroke="#18AA49" stroke-width="2"/><text x="574" y="408" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#0D5E28">Filter: selected source load</text>
+<text x="574" y="434" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">STG_COLLATERAL.LOAD_ID =</text>
+<text x="574" y="456" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">FIND_SOURCE_LOAD(...) (L129)</text>
+</g>
+<g class="node" data-node="COL" data-kind="source"><rect x="556" y="530" width="451" height="182" rx="12" fill="#EAEEFE" stroke="#2E50FA" stroke-width="3"/><text x="574" y="558" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#192C8A">COLLATERAL</text>
+<text x="574" y="584" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Identity table, only read here (L127)</text>
+<text x="574" y="606" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Match key (L128):</text>
+<text x="574" y="628" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">SOURCE_SYSTEM = 'CBS_SIM' AND</text>
+<text x="574" y="650" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">COLLATERAL_REF = STG_COLLATERAL.COLLATERAL_REF</text>
+<text x="574" y="672" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E293B">Field used downstream</text>
+<text x="574" y="694" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">COLLATERAL_ID</text>
+</g>
+<g class="node" data-node="JN" data-kind="step"><rect x="1177" y="380" width="421" height="116" rx="12" fill="#FCE6F8" stroke="#E006BB" stroke-width="2"/><text x="1195" y="408" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#7B0367">Inner join</text>
+<text x="1195" y="434" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">STG_COLLATERAL JOIN COLLATERAL (L127-L128)</text>
+<text x="1195" y="456" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">ON COLLATERAL_REF (SOURCE_SYSTEM = 'CBS_SIM')</text>
+<text x="1195" y="478" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">staged rows without a match are not selected</text>
+</g>
+<g class="node" data-node="MAP" data-kind="step"><rect x="1748" y="300" width="452" height="270" rx="12" fill="#FCE6F8" stroke="#E006BB" stroke-width="2"/><text x="1766" y="328" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#7B0367">Column mapping (SELECT)</text>
+<text x="1766" y="354" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">COLLATERAL_ID &lt;- COLLATERAL.COLLATERAL_ID</text>
+<text x="1766" y="376" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAD_ID &lt;- STG_COLLATERAL.LOAD_ID</text>
+<text x="1766" y="398" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">LOAN_ID &lt;- NULL</text>
+<text x="1766" y="420" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">CREATED_AT &lt;- SYSTIMESTAMP</text>
+<text x="1766" y="442" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E293B">Copied as delivered (L112-L125)</text>
+<text x="1766" y="464" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">COLLATERAL_TYPE, COLLATERAL_STATUS,</text>
+<text x="1766" y="486" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">CURRENCY_CODE, MARKET_VALUE_AMT,</text>
+<text x="1766" y="508" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">ELIGIBLE_VALUE_AMT, VALUATION_DATE,</text>
+<text x="1766" y="530" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">VALUATION_CURRENCY_CODE, ELIGIBILITY_FLAG,</text>
+<text x="1766" y="552" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">ELIGIBILITY_REASON_CODE, REGULATORY_HAIRCUT_PCT</text>
+</g>
+<g class="node" data-node="TGT" data-kind="target"><rect x="2350" y="300" width="378" height="292" rx="12" fill="#FCE6F8" stroke="#E006BB" stroke-width="3"/><text x="2368" y="328" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#7B0367">COLLATERAL_HIST</text>
+<text x="2368" y="354" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">INSERT only (L96); no update, merge or delete</text>
+<text x="2368" y="376" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">One row per selected, joined staged item</text>
+<text x="2368" y="398" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#1E293B">Output columns</text>
+<text x="2368" y="420" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">COLLATERAL_ID, LOAD_ID, LOAN_ID (NULL),</text>
+<text x="2368" y="442" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">COLLATERAL_TYPE, COLLATERAL_STATUS,</text>
+<text x="2368" y="464" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">CURRENCY_CODE, MARKET_VALUE_AMT,</text>
+<text x="2368" y="486" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">ELIGIBLE_VALUE_AMT, VALUATION_DATE,</text>
+<text x="2368" y="508" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">CREATED_AT, VALUATION_CURRENCY_CODE,</text>
+<text x="2368" y="530" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">ELIGIBILITY_FLAG, ELIGIBILITY_REASON_CODE,</text>
+<text x="2368" y="552" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">REGULATORY_HAIRCUT_PCT</text>
+<text x="2368" y="574" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">Same parameters twice fail on the primary key (L95)</text>
+</g>
+<g class="node" data-node="N1" data-kind="note"><rect x="40" y="840" width="2688" height="160" rx="12" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/><text x="58" y="868" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#515A65">Guards (check_guards, L41-L80; called at L93 before the INSERT)</text>
+<text x="58" y="894" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">AC-05 (L44-L52): P_BUSINESS_DATE is not at midnight</text>
+<text x="58" y="916" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">AC-06 (L53-L61): a staged row of the selected load has no CURRENCY_CODE</text>
+<text x="58" y="938" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">AC-07 (L62-L70): a staged row of the selected load has no COLLATERAL identity row</text>
+<text x="58" y="960" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">AC-08 (L71-L79): COLLATERAL_HIST already has rows for the selected load</text>
+<text x="58" y="982" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">A hit raises ORA-20005. Guards read data but write none.</text>
+</g>
+<g class="node" data-node="N2" data-kind="note"><rect x="40" y="1100" width="2688" height="94" rx="12" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2"/><text x="58" y="1128" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700" fill="#515A65">Transaction and control</text>
+<text x="58" y="1154" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">SAVEPOINT at the start (L86); no COMMIT in this package; on any error ROLLBACK TO SAVEPOINT and re-raise (L133-L137).</text>
+<text x="58" y="1176" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#1E293B">No load control record and no logging are written here (header comment L20-L21: the caller logs). The new rows carry the LOAD_ID of the selected staging load.</text>
+</g>
+<g class="edge" data-edge="P&gt;FSL" data-from="P" data-to="FSL" data-from-side="R" data-to-side="L" data-color="#7A7A7A" data-style="control" data-evidence="L129 argument of FIND_SOURCE_LOAD"><path d="M313 200 L556 200" fill="none" stroke="#7A7A7A" stroke-width="2.4" stroke-linejoin="round" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#m-7A7A7A)"/></g>
+<g class="edge" data-edge="FSL&gt;FLT" data-from="FSL" data-to="FLT" data-from-side="B" data-to-side="T" data-color="#7A7A7A" data-style="control" data-evidence="L129 predicate value"><path d="M616 298 L616 380" fill="none" stroke="#7A7A7A" stroke-width="2.4" stroke-linejoin="round" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#m-7A7A7A)"/></g>
+<g class="edge" data-edge="STG&gt;FLT" data-from="STG" data-to="FLT" data-from-side="R" data-to-side="L" data-color="#18AA49" data-style="data" data-evidence="L126, L129 FROM + WHERE"><path d="M386 400 L556 400" fill="none" stroke="#18AA49" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-18AA49)"/></g>
+<g class="edge" data-edge="FLT&gt;JN" data-from="FLT" data-to="JN" data-from-side="R" data-to-side="L" data-color="#18AA49" data-style="data" data-evidence="L126-L129 filtered driving rows enter the join"><path d="M832 420 L1177 420" fill="none" stroke="#18AA49" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-18AA49)"/></g>
+<g class="edge" data-edge="COL&gt;JN" data-from="COL" data-to="JN" data-from-side="R" data-to-side="B" data-color="#2E50FA" data-style="data" data-evidence="L127-L128 JOIN ... ON"><path d="M1007 590 L1237 590 L1237 496" fill="none" stroke="#2E50FA" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-2E50FA)"/></g>
+<g class="edge" data-edge="JN&gt;MAP" data-from="JN" data-to="MAP" data-from-side="R" data-to-side="L" data-color="#E006BB" data-style="data" data-evidence="L112-L128 SELECT list reads the joined rows"><path d="M1598 420 L1748 420" fill="none" stroke="#E006BB" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-E006BB)"/></g>
+<g class="edge" data-edge="MAP&gt;TGT" data-from="MAP" data-to="TGT" data-from-side="R" data-to-side="L" data-color="#E006BB" data-style="data" data-evidence="L96-L125 INSERT ... SELECT"><path d="M2200 360 L2350 360" fill="none" stroke="#E006BB" stroke-width="2.4" stroke-linejoin="round" marker-end="url(#m-E006BB)"/></g>
+<g class="label" data-label-for="P&gt;FSL"><rect x="406.5" y="190" width="40" height="20" rx="5" fill="#FFFFFF" stroke="#7A7A7A"/><text x="426.5" y="204" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#4F4F4F">date</text></g>
+<g class="label" data-label-for="FSL&gt;FLT"><rect x="582" y="321" width="68" height="20" rx="5" fill="#FFFFFF" stroke="#7A7A7A"/><text x="616" y="335" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#4F4F4F">LOAD_ID</text></g>
+<g class="label" data-label-for="STG&gt;FLT"><rect x="422" y="390" width="82" height="20" rx="5" fill="#FFFFFF" stroke="#18AA49"/><text x="463" y="404" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#106E2F">staged rows</text></g>
+<g class="label" data-label-for="FLT&gt;JN"><rect x="955.5" y="410" width="82" height="20" rx="5" fill="#FFFFFF" stroke="#18AA49"/><text x="996.5" y="424" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#106E2F">rows of load</text></g>
+<g class="label" data-label-for="COL&gt;JN"><rect x="1065" y="580" width="114" height="20" rx="5" fill="#FFFFFF" stroke="#2E50FA"/><text x="1122" y="594" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#1E34A2">COLLATERAL_ID</text></g>
+<g class="label" data-label-for="JN&gt;MAP"><rect x="1625.5" y="410" width="79" height="20" rx="5" fill="#FFFFFF" stroke="#E006BB"/><text x="1665" y="424" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#92047A">joined rows</text></g>
+<g class="label" data-label-for="MAP&gt;TGT"><rect x="2237" y="350" width="60" height="20" rx="5" fill="#FFFFFF" stroke="#E006BB"/><text x="2267" y="364" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#92047A">INSERT</text></g>
+</svg>
